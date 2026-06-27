@@ -1,0 +1,14 @@
+pub mod chat;
+pub mod docs;
+pub mod eval;
+pub mod evolve;
+pub mod feedback;
+pub mod flags;
+pub mod health;
+pub mod metrics;
+pub mod model;
+pub mod search;
+pub mod sessions;
+pub mod stats;
+pub mod tools;
+pub mod version;

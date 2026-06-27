@@ -1,1 +1,3 @@
-// asi-app: Leptos UI components (public pages + dashboard)
+pub mod app;
+
+pub use app::App;
