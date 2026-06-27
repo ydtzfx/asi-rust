@@ -3,6 +3,7 @@ use crate::schema::Session;
 use sqlx::SqlitePool;
 use uuid::Uuid;
 
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct NewSession {
     pub id: String,
     pub user_id: String,
