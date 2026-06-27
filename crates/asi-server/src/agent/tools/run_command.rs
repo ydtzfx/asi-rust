@@ -86,7 +86,12 @@ fn is_shell_safe(input: &str) -> bool {
 /// Truncate output to MAX_OUTPUT_CHARS and return a truncation flag.
 fn truncate_output(output: &str) -> (String, bool) {
     if output.len() > MAX_OUTPUT_CHARS {
-        let mut truncated = output[..MAX_OUTPUT_CHARS].to_string();
+        let safe_idx = output
+            .char_indices()
+            .nth(MAX_OUTPUT_CHARS)
+            .map(|(i, _)| i)
+            .unwrap_or(output.len());
+        let mut truncated = output[..safe_idx].to_string();
         truncated.push_str("\n... (output truncated)");
         (truncated, true)
     } else {
