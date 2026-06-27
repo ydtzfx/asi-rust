@@ -14,18 +14,21 @@ use super::tools::write_file::WriteFileTool;
 /// Build a `ToolLoopAgent` configured as the primary coding agent.
 ///
 /// The agent is equipped with four tools:
-/// - `readFile` — read file contents
-/// - `writeFile` — write content to files
-/// - `listDirectory` — list directory entries
-/// - `runCommand` — execute allowlisted commands
+/// - `readFile` -- read file contents
+/// - `writeFile` -- write content to files
+/// - `listDirectory` -- list directory entries
+/// - `runCommand` -- execute allowlisted commands
 ///
 /// The instruction set and step budget depend on the `read-only-mode` flag:
 /// - Normal: full instructions, 20 max steps
 /// - Read-only: compact instructions, 5 max steps
-pub fn build_code_agent<P: AiProvider + 'static>(provider: P) -> ToolLoopAgent<P> {
+pub fn build_code_agent(provider: Box<dyn AiProvider>) -> ToolLoopAgent {
     let mut tools: ToolMap = std::collections::HashMap::new();
 
-    tools.insert("readFile".into(), Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>);
+    tools.insert(
+        "readFile".into(),
+        Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>,
+    );
     tools.insert("writeFile".into(), Arc::new(WriteFileTool));
     tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
     tools.insert("runCommand".into(), Arc::new(RunCommandTool));
@@ -44,7 +47,11 @@ pub fn build_code_agent<P: AiProvider + 'static>(provider: P) -> ToolLoopAgent<P
 #[cfg(test)]
 mod tests {
     use super::*;
+    use asi_ai_sdk::provider::ProviderError;
+    use asi_ai_sdk::types::*;
     use async_trait::async_trait;
+    use futures_core::Stream;
+    use std::pin::Pin;
 
     /// A minimal provider for testing agent construction.
     struct TestProvider;
@@ -53,27 +60,22 @@ mod tests {
     impl AiProvider for TestProvider {
         async fn chat(
             &self,
-            _request: asi_ai_sdk::types::ChatRequest,
-        ) -> Result<asi_ai_sdk::types::ChatResponse, asi_ai_sdk::provider::ProviderError>
-        {
+            _request: ChatRequest,
+        ) -> Result<ChatResponse, ProviderError> {
             unimplemented!("not needed for construction test")
         }
 
         async fn chat_stream(
             &self,
-            _request: asi_ai_sdk::types::ChatRequest,
+            _request: ChatRequest,
         ) -> Result<
-            std::pin::Pin<
-                Box<dyn futures_core::Stream<Item = Result<asi_ai_sdk::types::StreamChunk, asi_ai_sdk::provider::ProviderError>> + Send>,
-            >,
-            asi_ai_sdk::provider::ProviderError,
+            Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>,
+            ProviderError,
         > {
             unimplemented!("not needed for construction test")
         }
 
-        async fn health_check(
-            &self,
-        ) -> Result<bool, asi_ai_sdk::provider::ProviderError> {
+        async fn health_check(&self) -> Result<bool, ProviderError> {
             Ok(true)
         }
 
@@ -84,24 +86,26 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_default() {
-        // Reset flags to ensure clean state (tests can run in parallel)
         asi_lib::flags::reset_flag("read-only-mode");
-        let provider = TestProvider;
-        let agent = build_code_agent(provider);
-        // Don't assert max_steps here to avoid races with parallel tests
-        // (config.rs tests verify max_steps logic independently)
-        assert!(agent.max_steps() > 0, "Agent should have a positive step count");
+        let provider = Box::new(TestProvider);
+        let agent = build_code_agent(provider as Box<dyn AiProvider>);
+        assert!(
+            agent.max_steps() > 0,
+            "Agent should have a positive step count"
+        );
     }
 
     #[test]
     fn test_build_code_agent_read_only() {
         asi_lib::flags::reset_flag("read-only-mode");
         asi_lib::flags::set_flag("read-only-mode");
-        let provider = TestProvider;
-        let agent = build_code_agent(provider);
-        assert!(agent.max_steps() == 5 || agent.max_steps() == 20,
+        let provider = Box::new(TestProvider);
+        let agent = build_code_agent(provider as Box<dyn AiProvider>);
+        assert!(
+            agent.max_steps() == 5 || agent.max_steps() == 20,
             "Agent step count should be 5 (read-only) or 20 (normal), got {}",
-            agent.max_steps());
+            agent.max_steps()
+        );
         asi_lib::flags::reset_flag("read-only-mode");
     }
 }

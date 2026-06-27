@@ -15,16 +15,24 @@ pub enum AgentEvent {
 
 /// A loop-based agent that calls an LLM with tools, executes tool calls,
 /// and feeds results back to the LLM until a text-only response is received.
-pub struct ToolLoopAgent<P: AiProvider> {
+///
+/// Uses `Box<dyn AiProvider>` internally so the concrete provider can be
+/// selected at runtime (e.g. from the model registry).
+pub struct ToolLoopAgent {
     #[allow(dead_code)]
-    provider: P,
+    provider: Box<dyn AiProvider>,
     instructions: String,
     tools: ToolMap,
     max_steps: usize,
 }
 
-impl<P: AiProvider> ToolLoopAgent<P> {
-    pub fn new(provider: P, instructions: String, tools: ToolMap, max_steps: usize) -> Self {
+impl ToolLoopAgent {
+    pub fn new(
+        provider: Box<dyn AiProvider>,
+        instructions: String,
+        tools: ToolMap,
+        max_steps: usize,
+    ) -> Self {
         Self { provider, instructions, tools, max_steps }
     }
 
@@ -74,7 +82,7 @@ impl<P: AiProvider> ToolLoopAgent<P> {
         _conversation: &mut Vec<Message>,
         _max_steps: usize,
     ) -> Result<(), String> {
-        // Core loop: call LLM → check for tool_calls → execute tools → feed back → repeat
+        // Core loop: call LLM -> check for tool_calls -> execute tools -> feed back -> repeat
         // Full implementation follows the same pattern as the original TypeScript code:
         // 1. Build ChatRequest with messages + tools
         // 2. Stream response, collecting text and any tool_calls
@@ -82,7 +90,7 @@ impl<P: AiProvider> ToolLoopAgent<P> {
         // 4. Add tool results as Role::Tool messages
         // 5. Loop until max_steps or no more tool_calls
 
-        // Placeholder — full implementation in the actual crate
+        // Placeholder -- full implementation in the actual crate
         let _ = tx.send(AgentEvent::Done { usage: None });
         Ok(())
     }

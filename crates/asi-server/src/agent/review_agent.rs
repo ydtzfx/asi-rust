@@ -14,29 +14,31 @@ const REVIEW_MAX_STEPS: usize = 15;
 /// Build a `ToolLoopAgent` configured as a read-only code review agent.
 ///
 /// The agent is equipped with two read-only tools:
-/// - `readFile` — read file contents
-/// - `listDirectory` — list directory entries
+/// - `readFile` -- read file contents
+/// - `listDirectory` -- list directory entries
 ///
 /// Uses the compact instruction set and runs for a maximum of 15 steps.
 /// This agent cannot modify files or execute commands.
-pub fn build_review_agent<P: AiProvider + 'static>(provider: P) -> ToolLoopAgent<P> {
+pub fn build_review_agent(provider: Box<dyn AiProvider>) -> ToolLoopAgent {
     let mut tools: ToolMap = std::collections::HashMap::new();
 
-    tools.insert("readFile".into(), Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>);
+    tools.insert(
+        "readFile".into(),
+        Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>,
+    );
     tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
 
-    ToolLoopAgent::new(
-        provider,
-        AGENT_INSTRUCTIONS_COMPACT.to_string(),
-        tools,
-        REVIEW_MAX_STEPS,
-    )
+    ToolLoopAgent::new(provider, AGENT_INSTRUCTIONS_COMPACT.to_string(), tools, REVIEW_MAX_STEPS)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use asi_ai_sdk::provider::ProviderError;
+    use asi_ai_sdk::types::*;
     use async_trait::async_trait;
+    use futures_core::Stream;
+    use std::pin::Pin;
 
     struct TestProvider;
 
@@ -44,27 +46,22 @@ mod tests {
     impl AiProvider for TestProvider {
         async fn chat(
             &self,
-            _request: asi_ai_sdk::types::ChatRequest,
-        ) -> Result<asi_ai_sdk::types::ChatResponse, asi_ai_sdk::provider::ProviderError>
-        {
+            _request: ChatRequest,
+        ) -> Result<ChatResponse, ProviderError> {
             unimplemented!("not needed for construction test")
         }
 
         async fn chat_stream(
             &self,
-            _request: asi_ai_sdk::types::ChatRequest,
+            _request: ChatRequest,
         ) -> Result<
-            std::pin::Pin<
-                Box<dyn futures_core::Stream<Item = Result<asi_ai_sdk::types::StreamChunk, asi_ai_sdk::provider::ProviderError>> + Send>,
-            >,
-            asi_ai_sdk::provider::ProviderError,
+            Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>,
+            ProviderError,
         > {
             unimplemented!("not needed for construction test")
         }
 
-        async fn health_check(
-            &self,
-        ) -> Result<bool, asi_ai_sdk::provider::ProviderError> {
+        async fn health_check(&self) -> Result<bool, ProviderError> {
             Ok(true)
         }
 
@@ -75,8 +72,8 @@ mod tests {
 
     #[test]
     fn test_build_review_agent() {
-        let provider = TestProvider;
-        let agent = build_review_agent(provider);
+        let provider = Box::new(TestProvider);
+        let agent = build_review_agent(provider as Box<dyn AiProvider>);
         assert_eq!(agent.max_steps(), 15);
     }
 }

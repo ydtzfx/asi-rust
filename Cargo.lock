@@ -40,7 +40,7 @@ name = "asi-ai-sdk"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "axum 0.8.9",
+ "axum 0.7.9",
  "futures-core",
  "reqwest",
  "serde",
@@ -124,6 +124,7 @@ dependencies = [
  "sqlx",
  "thiserror 2.0.18",
  "tokio",
+ "tokio-stream",
  "tower",
  "tower-http",
  "tracing",
