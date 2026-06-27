@@ -6,11 +6,24 @@ use tokio::sync::mpsc;
 /// Event emitted during agent execution (for SSE streaming).
 #[derive(Debug, Clone)]
 pub enum AgentEvent {
-    TextDelta { content: String },
-    ToolCall { name: String, arguments: String },
-    ToolResult { name: String, result: String, truncated: bool },
-    Done { usage: Option<Usage> },
-    Error { message: String },
+    TextDelta {
+        content: String,
+    },
+    ToolCall {
+        name: String,
+        arguments: String,
+    },
+    ToolResult {
+        name: String,
+        result: String,
+        truncated: bool,
+    },
+    Done {
+        usage: Option<Usage>,
+    },
+    Error {
+        message: String,
+    },
 }
 
 /// A loop-based agent that calls an LLM with tools, executes tool calls,
@@ -33,7 +46,12 @@ impl ToolLoopAgent {
         tools: ToolMap,
         max_steps: usize,
     ) -> Self {
-        Self { provider, instructions, tools, max_steps }
+        Self {
+            provider,
+            instructions,
+            tools,
+            max_steps,
+        }
     }
 
     /// Maximum number of steps the agent can take in a single run.
@@ -54,7 +72,11 @@ impl ToolLoopAgent {
     ) -> Result<mpsc::UnboundedReceiver<AgentEvent>, String> {
         let (tx, rx) = mpsc::unbounded_channel();
         let instructions = self.instructions.clone();
-        let tools = self.tools.values().map(|t| t.definition()).collect::<Vec<_>>();
+        let tools = self
+            .tools
+            .values()
+            .map(|t| t.definition())
+            .collect::<Vec<_>>();
         let max_steps = self.max_steps;
 
         // Clone what we need for the spawned task

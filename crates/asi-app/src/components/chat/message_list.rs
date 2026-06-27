@@ -1,7 +1,7 @@
 use leptos::prelude::*;
 
-use super::message_item::MessageItem;
 use super::ChatMessage;
+use super::message_item::MessageItem;
 
 /// Renders a scrollable list of chat messages with auto-scroll.
 ///
@@ -20,7 +20,7 @@ pub fn MessageList(
         move || messages.get().len(),
         move |_len, _prev_len, _| {
             if let Some(el) = scroll_anchor.get() {
-                let _ = el.scroll_into_view();
+                el.scroll_into_view();
             }
         },
         false,

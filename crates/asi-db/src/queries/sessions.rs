@@ -10,7 +10,7 @@ pub async fn create_session(
     let now = unix_now();
     sqlx::query_as::<_, Session>(
         "INSERT INTO sessions (id, user_id, title, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?) RETURNING *"
+         VALUES (?, ?, ?, ?, ?) RETURNING *",
     )
     .bind(id)
     .bind(user_id)
@@ -39,7 +39,7 @@ pub async fn update_session(
            token_used = MAX(token_used, ?),
            updated_at = ?
          WHERE id = ? AND user_id = ?
-         RETURNING *"
+         RETURNING *",
     )
     .bind(title)
     .bind(context_json)
@@ -66,7 +66,7 @@ pub async fn list_sessions_by_user(
     offset: i64,
 ) -> Result<Vec<Session>, sqlx::Error> {
     sqlx::query_as::<_, Session>(
-        "SELECT * FROM sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+        "SELECT * FROM sessions WHERE user_id = ? ORDER BY updated_at DESC LIMIT ? OFFSET ?",
     )
     .bind(user_id)
     .bind(limit)
@@ -75,7 +75,11 @@ pub async fn list_sessions_by_user(
     .await
 }
 
-pub async fn delete_session(pool: &SqlitePool, id: &str, user_id: &str) -> Result<u64, sqlx::Error> {
+pub async fn delete_session(
+    pool: &SqlitePool,
+    id: &str,
+    user_id: &str,
+) -> Result<u64, sqlx::Error> {
     let result = sqlx::query("DELETE FROM sessions WHERE id = ? AND user_id = ?")
         .bind(id)
         .bind(user_id)

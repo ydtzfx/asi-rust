@@ -3,8 +3,8 @@ pub mod schema;
 pub mod session_cleanup;
 pub mod session_store;
 
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use sqlx::SqlitePool;
+use sqlx::sqlite::{SqliteConnectOptions, SqlitePoolOptions};
 use std::sync::OnceLock;
 
 static DB_POOL: OnceLock<SqlitePool> = OnceLock::new();
@@ -31,7 +31,9 @@ pub async fn init_db(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
 /// Get a reference to the initialized database pool.
 /// Panics if `init_db` hasn't been called.
 pub fn get_db() -> &'static SqlitePool {
-    DB_POOL.get().expect("Database not initialized. Call init_db first.")
+    DB_POOL
+        .get()
+        .expect("Database not initialized. Call init_db first.")
 }
 
 /// Set the global database pool. Used by `init_db` or tests.

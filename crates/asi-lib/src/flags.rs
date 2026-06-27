@@ -25,10 +25,10 @@ static OVERRIDES: LazyLock<RwLock<HashMap<String, bool>>> =
 /// Priority: runtime set_flag > FEATURE_<NAME> env var > default.
 pub fn flag(name: &str) -> bool {
     // Runtime override
-    if let Ok(overrides) = OVERRIDES.read() {
-        if let Some(&v) = overrides.get(name) {
-            return v;
-        }
+    if let Ok(overrides) = OVERRIDES.read()
+        && let Some(&v) = overrides.get(name)
+    {
+        return v;
     }
 
     // Environment variable

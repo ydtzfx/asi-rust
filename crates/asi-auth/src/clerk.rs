@@ -1,5 +1,5 @@
 use crate::types::{AuthError, AuthenticatedUser};
-use jsonwebtoken::{decode, decode_header, Algorithm, DecodingKey, Validation};
+use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
 use serde::Deserialize;
 use std::sync::RwLock;
 
@@ -31,10 +31,10 @@ async fn fetch_jwks() -> Result<Vec<JwkKey>, AuthError> {
     // Check cache first
     {
         let cache = JWKS_CACHE.read().unwrap();
-        if let Some((keys, cached_at)) = cache.as_ref() {
-            if cached_at.elapsed() < std::time::Duration::from_secs(3600) {
-                return Ok(keys.clone());
-            }
+        if let Some((keys, cached_at)) = cache.as_ref()
+            && cached_at.elapsed() < std::time::Duration::from_secs(3600)
+        {
+            return Ok(keys.clone());
         }
     }
 
@@ -61,8 +61,7 @@ async fn fetch_jwks() -> Result<Vec<JwkKey>, AuthError> {
 /// The token can be the raw JWT from Clerk's __session cookie
 /// or the standard Authorization header format.
 pub async fn verify_clerk_jwt(token: &str) -> Result<AuthenticatedUser, AuthError> {
-    let header =
-        decode_header(token).map_err(|e| AuthError::InvalidToken(e.to_string()))?;
+    let header = decode_header(token).map_err(|e| AuthError::InvalidToken(e.to_string()))?;
     let kid = header
         .kid
         .ok_or_else(|| AuthError::InvalidToken("Missing kid".into()))?;
@@ -108,22 +107,21 @@ pub async fn verify_clerk_jwt(token: &str) -> Result<AuthenticatedUser, AuthErro
 /// Extract JWT from request headers or cookies.
 pub fn extract_jwt_from_request<B>(request: &axum::http::Request<B>) -> Option<String> {
     // Try Authorization header first
-    if let Some(auth) = request.headers().get("authorization") {
-        if let Ok(value) = auth.to_str() {
-            if let Some(token) = value.strip_prefix("Bearer ") {
-                return Some(token.to_string());
-            }
-        }
+    if let Some(auth) = request.headers().get("authorization")
+        && let Ok(value) = auth.to_str()
+        && let Some(token) = value.strip_prefix("Bearer ")
+    {
+        return Some(token.to_string());
     }
 
     // Try __session cookie (Clerk default)
-    if let Some(cookie) = request.headers().get("cookie") {
-        if let Ok(cookie_str) = cookie.to_str() {
-            for pair in cookie_str.split(';') {
-                let pair = pair.trim();
-                if let Some(value) = pair.strip_prefix("__session=") {
-                    return Some(value.to_string());
-                }
+    if let Some(cookie) = request.headers().get("cookie")
+        && let Ok(cookie_str) = cookie.to_str()
+    {
+        for pair in cookie_str.split(';') {
+            let pair = pair.trim();
+            if let Some(value) = pair.strip_prefix("__session=") {
+                return Some(value.to_string());
             }
         }
     }

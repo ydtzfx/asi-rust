@@ -1,8 +1,4 @@
-use axum::{
-    Json, Router,
-    http::StatusCode,
-    routing::post,
-};
+use axum::{Json, Router, http::StatusCode, routing::post};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::process::Command;
@@ -57,7 +53,10 @@ async fn evolve(Json(body): Json<EvolveRequest>) -> Result<Json<Value>, (StatusC
     }
 
     // ---- Run lint (cargo clippy --all-targets -- -D warnings) ----
-    let lint_output = run_command("cargo", &["clippy", "--all-targets", "--", "-D", "warnings"]);
+    let lint_output = run_command(
+        "cargo",
+        &["clippy", "--all-targets", "--", "-D", "warnings"],
+    );
 
     // ---- Run tests (cargo test --workspace) ----
     let test_output = run_command("cargo", &["test", "--workspace"]);

@@ -1,8 +1,4 @@
-use axum::{
-    Json, Router,
-    http::StatusCode,
-    routing::post,
-};
+use axum::{Json, Router, http::StatusCode, routing::post};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -22,6 +18,7 @@ struct EvalRequest {
     /// Optional evaluation criteria (free-form instructions appended to the
     /// agent's system prompt for this run).
     #[serde(default)]
+    #[allow(dead_code)]
     criteria: Option<String>,
     /// Optional model override (e.g. "deepseek-chat", "gemma4:31b-cloud").
     #[serde(default)]
@@ -70,7 +67,9 @@ async fn eval_handler(
                 .clone()
                 .or_else(|| std::env::var("DEEPSEEK_MODEL").ok())
                 .unwrap_or_else(|| "deepseek-chat".into());
-            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(api_key, model))
+            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
+                api_key, model,
+            ))
         } else {
             let ollama_url = std::env::var("OLLAMA_BASE_URL")
                 .unwrap_or_else(|_| "http://localhost:11434/v1".into());
@@ -79,7 +78,10 @@ async fn eval_handler(
                 .clone()
                 .or_else(|| std::env::var("OLLAMA_MODEL").ok())
                 .unwrap_or_else(|| "gemma4:31b-cloud".into());
-            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(ollama_model, ollama_url))
+            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+                ollama_model,
+                ollama_url,
+            ))
         }
     };
 
@@ -122,7 +124,11 @@ async fn eval_handler(
     }
 
     let response = EvalResponse {
-        status: if error.is_some() { "error".to_string() } else { "completed".to_string() },
+        status: if error.is_some() {
+            "error".to_string()
+        } else {
+            "completed".to_string()
+        },
         steps,
         output,
         error,

@@ -1,13 +1,9 @@
-use axum::{
-    Json, Router,
-    http::StatusCode,
-    routing::get,
-};
+use axum::{Json, Router, http::StatusCode, routing::get};
 use serde::Deserialize;
 use serde_json::Value;
 use std::sync::Mutex;
 
-use asi_ai_sdk::provider::model_registry::{build_default_registry, ModelInfo, ModelRegistry};
+use asi_ai_sdk::provider::model_registry::{ModelInfo, ModelRegistry, build_default_registry};
 
 // ---------------------------------------------------------------------------
 // Global model registry (lazy, shared across requests)
@@ -85,6 +81,5 @@ async fn switch_model(
 // ---------------------------------------------------------------------------
 
 pub fn routes() -> Router {
-    Router::new()
-        .route("/model", get(list_models).post(switch_model))
+    Router::new().route("/model", get(list_models).post(switch_model))
 }

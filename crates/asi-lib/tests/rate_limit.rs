@@ -47,16 +47,10 @@ fn test_rate_limit_window_expires() {
     let limiter = SlidingWindowLimiter::new();
     // Exhaust with 1ms window
     for _ in 0..2 {
-        assert_eq!(
-            limiter.check("expire-test", 2, 1),
-            RateLimitResult::Ok
-        );
+        assert_eq!(limiter.check("expire-test", 2, 1), RateLimitResult::Ok);
     }
     // Third should be denied
-    assert_ne!(
-        limiter.check("expire-test", 2, 1),
-        RateLimitResult::Ok
-    );
+    assert_ne!(limiter.check("expire-test", 2, 1), RateLimitResult::Ok);
     // After the window expires (wait a tiny bit), should allow again
     std::thread::sleep(Duration::from_millis(5));
     let result = limiter.check("expire-test", 2, 1);

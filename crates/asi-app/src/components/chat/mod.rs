@@ -93,11 +93,10 @@ impl ChatMessage {
                 result: res @ None,
                 ..
             } = part
+                && n == name
             {
-                if n == name {
-                    *res = Some(result);
-                    return;
-                }
+                *res = Some(result);
+                return;
             }
         }
     }

@@ -19,24 +19,24 @@ fn render_parts(parts: Vec<MessagePart>) -> Vec<AnyView> {
         .into_iter()
         .map(|part| match part {
             MessagePart::Text(content) => {
-                view! { <div class="whitespace-pre-wrap break-words">{content}</div> }
-                    .into_any()
+                view! { <div class="whitespace-pre-wrap break-words">{content}</div> }.into_any()
             }
             MessagePart::Reasoning(content) => {
                 view! { <ReasoningBlock content=content.clone()/> }.into_any()
             }
             MessagePart::ToolCall {
-                name, arguments, result, ..
-            } => {
-                view! {
-                    <ToolBlock
-                        name=name.clone()
-                        arguments=arguments.clone()
-                        result=result.clone()
-                    />
-                }
-                .into_any()
+                name,
+                arguments,
+                result,
+                ..
+            } => view! {
+                <ToolBlock
+                    name=name.clone()
+                    arguments=arguments.clone()
+                    result=result.clone()
+                />
             }
+            .into_any(),
         })
         .collect()
 }
@@ -55,7 +55,11 @@ pub fn MessageItem(
     let is_user = message.role == "user";
     let style = role_style(&message.role);
 
-    let alignment = if is_user { "justify-end" } else { "justify-start" };
+    let alignment = if is_user {
+        "justify-end"
+    } else {
+        "justify-start"
+    };
     let bubble_rounding = if is_user {
         "rounded-2xl rounded-tr-md"
     } else {
@@ -63,11 +67,18 @@ pub fn MessageItem(
     };
 
     let role_label = if is_user { "You" } else { "ASI" };
-    let role_color = if is_user { "text-blue-600" } else { "text-gray-800" };
+    let role_color = if is_user {
+        "text-blue-600"
+    } else {
+        "text-gray-800"
+    };
 
     let container_class = format!("flex {} mb-4", alignment);
     let bubble_class = format!("max-w-[80%] px-4 py-3 {} {}", style, bubble_rounding);
-    let label_class = format!("text-xs font-semibold uppercase tracking-wider mb-1 {}", role_color);
+    let label_class = format!(
+        "text-xs font-semibold uppercase tracking-wider mb-1 {}",
+        role_color
+    );
 
     let parts = render_parts(message.parts);
 

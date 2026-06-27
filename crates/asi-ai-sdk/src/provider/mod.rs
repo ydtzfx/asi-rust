@@ -26,10 +26,7 @@ pub trait AiProvider: Send + Sync {
     async fn chat_stream(
         &self,
         request: ChatRequest,
-    ) -> Result<
-        Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>,
-        ProviderError,
-    >;
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>, ProviderError>;
 
     /// Check if the provider is reachable and healthy.
     async fn health_check(&self) -> Result<bool, ProviderError>;

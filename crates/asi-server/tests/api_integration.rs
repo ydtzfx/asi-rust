@@ -1,8 +1,8 @@
 use asi_server::routes;
 use axum::{
+    Router,
     body::Body,
     http::{Request, StatusCode},
-    Router,
 };
 use serde_json::Value;
 use tower::ServiceExt;

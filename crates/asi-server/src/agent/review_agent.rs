@@ -28,7 +28,12 @@ pub fn build_review_agent(provider: Box<dyn AiProvider>) -> ToolLoopAgent {
     );
     tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
 
-    ToolLoopAgent::new(provider, AGENT_INSTRUCTIONS_COMPACT.to_string(), tools, REVIEW_MAX_STEPS)
+    ToolLoopAgent::new(
+        provider,
+        AGENT_INSTRUCTIONS_COMPACT.to_string(),
+        tools,
+        REVIEW_MAX_STEPS,
+    )
 }
 
 #[cfg(test)]
@@ -44,10 +49,7 @@ mod tests {
 
     #[async_trait]
     impl AiProvider for TestProvider {
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             unimplemented!("not needed for construction test")
         }
 

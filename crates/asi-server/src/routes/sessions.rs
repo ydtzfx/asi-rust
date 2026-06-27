@@ -51,10 +51,15 @@ async fn list_sessions(
     Query(params): Query<ListSessionsParams>,
 ) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let pool = asi_db::get_db();
-    asi_db::queries::sessions::list_sessions_by_user(pool, &params.user_id, params.limit, params.offset)
-        .await
-        .map(|sessions| Json(serde_json::json!(sessions)))
-        .map_err(|e| internal_error(e.to_string()))
+    asi_db::queries::sessions::list_sessions_by_user(
+        pool,
+        &params.user_id,
+        params.limit,
+        params.offset,
+    )
+    .await
+    .map(|sessions| Json(serde_json::json!(sessions)))
+    .map_err(|e| internal_error(e.to_string()))
 }
 
 /// POST /api/sessions — create a new session.
@@ -82,14 +87,15 @@ async fn delete_session(
     if rows > 0 {
         Ok(Json(serde_json::json!({"deleted": true})))
     } else {
-        Err((StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "Session not found"}))))
+        Err((
+            StatusCode::NOT_FOUND,
+            Json(serde_json::json!({"error": "Session not found"})),
+        ))
     }
 }
 
 /// GET /api/sessions/:id/export — export a session as JSON.
-async fn export_session(
-    Path(id): Path<String>,
-) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+async fn export_session(Path(id): Path<String>) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     let pool = asi_db::get_db();
     match asi_db::session_store::get_session(pool, &id).await {
         Ok(Some(session)) => Ok(Json(serde_json::json!(session))),
@@ -110,7 +116,10 @@ fn internal_error(msg: String) -> (StatusCode, Json<Value>) {
 }
 
 fn not_found(msg: &str) -> (StatusCode, Json<Value>) {
-    (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": msg})))
+    (
+        StatusCode::NOT_FOUND,
+        Json(serde_json::json!({"error": msg})),
+    )
 }
 
 // ---------------------------------------------------------------------------

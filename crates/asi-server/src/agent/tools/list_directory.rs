@@ -17,8 +17,7 @@ impl Tool for ListDirectoryTool {
             def_type: "function".into(),
             function: FunctionDef {
                 name: "listDirectory".into(),
-                description: "List entries in a directory on the local filesystem. "
-                    .into(),
+                description: "List entries in a directory on the local filesystem. ".into(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -41,7 +40,7 @@ impl Tool for ListDirectoryTool {
 
         let safe_path = asi_lib::safe_path::resolve_safe_path(path)
             .await
-            .map_err(|e| ToolError::Execution(e))?;
+            .map_err(ToolError::Execution)?;
 
         let mut entries = tokio::fs::read_dir(&safe_path)
             .await
@@ -112,9 +111,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_directory_path_traversal_blocked() {
         let tool = ListDirectoryTool;
-        let result = tool
-            .execute(json!({ "path": "../etc" }))
-            .await;
+        let result = tool.execute(json!({ "path": "../etc" })).await;
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
         assert!(err.contains("Access denied") || err.contains("denied"));

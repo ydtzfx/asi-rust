@@ -1,8 +1,4 @@
-use axum::{
-    Json, Router,
-    extract::Query,
-    routing::get,
-};
+use axum::{Json, Router, extract::Query, routing::get};
 use serde_json::Value;
 use std::collections::HashMap;
 
@@ -39,6 +35,5 @@ async fn toggle_flag(Query(params): Query<HashMap<String, String>>) -> Json<Valu
 }
 
 pub fn routes() -> Router {
-    Router::new()
-        .route("/flags", get(list_flags).post(toggle_flag))
+    Router::new().route("/flags", get(list_flags).post(toggle_flag))
 }

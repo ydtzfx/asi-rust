@@ -6,7 +6,9 @@ pub fn new_uuid() -> String {
 
 pub fn nanoid(len: usize) -> String {
     let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz0123456789".chars().collect();
-    (0..len).map(|_| chars[rand::random::<usize>() % chars.len()]).collect()
+    (0..len)
+        .map(|_| chars[rand::random::<usize>() % chars.len()])
+        .collect()
 }
 
 #[cfg(test)]

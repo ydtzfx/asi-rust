@@ -1,9 +1,7 @@
 use leptos::prelude::*;
 use leptos_meta::*;
 
-use crate::components::chat::{
-    ChatMessage, InputBar, MessageList,
-};
+use crate::components::chat::{ChatMessage, InputBar, MessageList};
 use crate::contexts::use_user;
 
 /// Dashboard chat page.
@@ -34,10 +32,7 @@ pub fn DashboardPage() -> impl IntoView {
 
         // 1. Add the user message to the list
         let msg_idx = messages.get().len();
-        let user_msg = ChatMessage::new_user(
-            format!("user-{}", msg_idx),
-            text.clone(),
-        );
+        let user_msg = ChatMessage::new_user(format!("user-{}", msg_idx), text.clone());
         messages.update(|msgs| msgs.push(user_msg));
 
         // 2. Create a placeholder assistant message that we'll stream into
@@ -147,7 +142,9 @@ async fn stream_chat_response(
         opts.set_method("POST");
         opts.set_body(&js_body);
         let headers = web_sys::Headers::new().unwrap_throw();
-        headers.append("Content-Type", "application/json").unwrap_throw();
+        headers
+            .append("Content-Type", "application/json")
+            .unwrap_throw();
         opts.set_headers(&headers);
         opts
     };
@@ -227,11 +224,7 @@ fn parse_sse_into_messages(sse_text: &str, messages: &RwSignal<Vec<ChatMessage>>
 
 /// Dispatch a single SSE event to the messages list.
 #[cfg(target_arch = "wasm32")]
-fn handle_sse_event(
-    event: &str,
-    data: &str,
-    messages: &RwSignal<Vec<ChatMessage>>,
-) {
+fn handle_sse_event(event: &str, data: &str, messages: &RwSignal<Vec<ChatMessage>>) {
     messages.update(|msgs| {
         // Find the last assistant message (the one being streamed to).
         let last_assistant = msgs.iter_mut().rev().find(|m| m.role == "assistant");
@@ -245,19 +238,18 @@ fn handle_sse_event(
                 msg.push_reasoning(data);
             }
             "tool_call" => {
-                if let Ok(payload) =
-                    serde_json::from_str::<serde_json::Value>(data)
-                {
+                if let Ok(payload) = serde_json::from_str::<serde_json::Value>(data) {
                     let name = payload["name"].as_str().unwrap_or("unknown").to_string();
-                    let args = payload.get("arguments").cloned().unwrap_or(serde_json::Value::Null);
+                    let args = payload
+                        .get("arguments")
+                        .cloned()
+                        .unwrap_or(serde_json::Value::Null);
                     let id = payload["id"].as_str().unwrap_or("tc-0").to_string();
                     msg.push_tool_call(id, name, args);
                 }
             }
             "tool_result" => {
-                if let Ok(payload) =
-                    serde_json::from_str::<serde_json::Value>(data)
-                {
+                if let Ok(payload) = serde_json::from_str::<serde_json::Value>(data) {
                     let name = payload["name"].as_str().unwrap_or("unknown");
                     let result = payload["result"].as_str().unwrap_or("");
                     msg.push_tool_result(name, result.to_string());

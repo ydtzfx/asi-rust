@@ -16,7 +16,8 @@ pub fn ToolBlock(
 ) -> impl IntoView {
     let pretty_args = serde_json::to_string_pretty(&arguments).unwrap_or_default();
 
-    let result_section = move || result.clone().map(|res| {
+    let result_section = move || {
+        result.clone().map(|res| {
         // Attempt to pretty-print the result if it's valid JSON.
         let pretty_res = serde_json::from_str::<serde_json::Value>(&res)
             .ok()
@@ -31,7 +32,8 @@ pub fn ToolBlock(
                 <pre class="text-xs text-gray-700 whitespace-pre-wrap font-mono">{pretty_res}</pre>
             </div>
         }
-    });
+    })
+    };
 
     view! {
         <details class="group rounded-lg border border-gray-200 bg-gray-50 overflow-hidden">

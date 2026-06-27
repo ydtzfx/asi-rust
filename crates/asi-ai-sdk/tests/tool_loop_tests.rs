@@ -29,7 +29,10 @@ impl Tool for MockTool {
 
 #[test]
 fn test_mock_tool_definition() {
-    let tool = MockTool { name: "mock".into(), result: "ok".into() };
+    let tool = MockTool {
+        name: "mock".into(),
+        result: "ok".into(),
+    };
     let def = tool.definition();
     assert_eq!(def.function.name, "mock");
     assert_eq!(def.def_type, "function");
@@ -38,7 +41,9 @@ fn test_mock_tool_definition() {
 #[test]
 fn test_agent_event_types() {
     use asi_ai_sdk::agent::tool_loop::AgentEvent;
-    let text = AgentEvent::TextDelta { content: "hello".into() };
+    let text = AgentEvent::TextDelta {
+        content: "hello".into(),
+    };
     let done = AgentEvent::Done { usage: None };
     // Verify they are the expected variants
     assert!(matches!(text, AgentEvent::TextDelta { .. }));

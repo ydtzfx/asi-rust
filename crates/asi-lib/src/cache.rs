@@ -21,10 +21,10 @@ impl<V> Cache<V> {
         V: Clone,
     {
         let map = self.inner.lock().ok()?;
-        if let Some((value, expiry)) = map.get(key) {
-            if Instant::now() < *expiry {
-                return Some(value.clone());
-            }
+        if let Some((value, expiry)) = map.get(key)
+            && Instant::now() < *expiry
+        {
+            return Some(value.clone());
         }
         None
     }

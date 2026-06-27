@@ -58,10 +58,7 @@ mod tests {
 
     #[async_trait]
     impl AiProvider for TestProvider {
-        async fn chat(
-            &self,
-            _request: ChatRequest,
-        ) -> Result<ChatResponse, ProviderError> {
+        async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
             unimplemented!("not needed for construction test")
         }
 

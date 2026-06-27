@@ -57,10 +57,8 @@ impl AiProvider for DeepSeekProvider {
     async fn chat_stream(
         &self,
         mut request: ChatRequest,
-    ) -> Result<
-        Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>,
-        ProviderError,
-    > {
+    ) -> Result<Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>, ProviderError>
+    {
         request.model = self.model.clone();
         request.stream = Some(true);
 
@@ -83,26 +81,26 @@ impl AiProvider for DeepSeekProvider {
             });
         }
 
-        let stream = resp
-            .bytes_stream()
-            .filter_map(|result| match result {
-                Ok(bytes) => {
-                    let text = String::from_utf8_lossy(&bytes);
-                    text.lines()
-                        .filter(|line| line.starts_with("data: "))
-                        .filter(|line| *line != "data: [DONE]")
-                        .map(|line| {
-                            let json = &line[6..];
-                            serde_json::from_str::<StreamChunk>(json)
-                                .map_err(|e| ProviderError::Parse(e.to_string()))
-                        })
-                        .next()
-                }
-                Err(e) => Some(Err(ProviderError::Http(e.to_string()))),
-            });
+        let stream = resp.bytes_stream().filter_map(|result| match result {
+            Ok(bytes) => {
+                let text = String::from_utf8_lossy(&bytes);
+                text.lines()
+                    .filter(|line| line.starts_with("data: "))
+                    .filter(|line| *line != "data: [DONE]")
+                    .map(|line| {
+                        let json = &line[6..];
+                        serde_json::from_str::<StreamChunk>(json)
+                            .map_err(|e| ProviderError::Parse(e.to_string()))
+                    })
+                    .next()
+            }
+            Err(e) => Some(Err(ProviderError::Http(e.to_string()))),
+        });
 
         Ok(Box::pin(stream)
-            as Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>)
+            as Pin<
+                Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>,
+            >)
     }
 
     async fn health_check(&self) -> Result<bool, ProviderError> {

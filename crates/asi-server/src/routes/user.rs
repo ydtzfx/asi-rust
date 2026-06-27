@@ -1,9 +1,5 @@
 use axum::{
-    extract::Request,
-    http::StatusCode,
-    response::IntoResponse,
-    routing::get,
-    Json, Router,
+    Json, Router, extract::Request, http::StatusCode, response::IntoResponse, routing::get,
 };
 
 use asi_auth::middleware::{get_user_from_request, require_auth};
@@ -22,7 +18,7 @@ pub fn routes() -> Router {
 async fn user_me_handler(request: Request) -> impl IntoResponse {
     match get_user_from_request(&request) {
         Some(user) => {
-            let user: &AuthenticatedUser = &*user;
+            let user: &AuthenticatedUser = &user;
             Json(serde_json::json!({
                 "sub": user.sub,
                 "email": user.email,
@@ -32,14 +28,12 @@ async fn user_me_handler(request: Request) -> impl IntoResponse {
             }))
             .into_response()
         }
-        None => {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(serde_json::json!({
-                    "error": "User context missing after authentication"
-                })),
-            )
-                .into_response()
-        }
+        None => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(serde_json::json!({
+                "error": "User context missing after authentication"
+            })),
+        )
+            .into_response(),
     }
 }

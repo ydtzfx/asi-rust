@@ -116,8 +116,10 @@ async fn fetch_current_user() -> Result<Option<UserInfo>, String> {
             if !response.ok() {
                 return Err(format!("Request failed: HTTP {}", status));
             }
-            let info: UserInfo =
-                response.json().await.map_err(|e| format!("JSON parse error: {}", e))?;
+            let info: UserInfo = response
+                .json()
+                .await
+                .map_err(|e| format!("JSON parse error: {}", e))?;
             Ok(Some(info))
         }
         Err(e) => Err(format!("Network error: {}", e)),

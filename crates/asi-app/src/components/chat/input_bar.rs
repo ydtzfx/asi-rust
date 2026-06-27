@@ -28,8 +28,6 @@ pub fn InputBar(
 
     // Build the submit logic once, share via Rc.
     let submit_logic: Rc<dyn Fn()> = {
-        let input = input.clone();
-        let textarea_ref = textarea_ref.clone();
         let on_submit = on_submit.clone();
         Rc::new(move || {
             let text = input.get().trim().to_string();

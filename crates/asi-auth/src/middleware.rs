@@ -9,8 +9,7 @@ use std::sync::Arc;
 /// Axum middleware that verifies Clerk JWT and injects AuthenticatedUser.
 /// Routes that need auth should wrap with this layer.
 pub async fn require_auth(mut request: Request, next: Next) -> Result<Response, StatusCode> {
-    let token =
-        clerk::extract_jwt_from_request(&request).ok_or(StatusCode::UNAUTHORIZED)?;
+    let token = clerk::extract_jwt_from_request(&request).ok_or(StatusCode::UNAUTHORIZED)?;
 
     match clerk::verify_clerk_jwt(&token).await {
         Ok(user) => {
@@ -26,5 +25,8 @@ pub async fn require_auth(mut request: Request, next: Next) -> Result<Response, 
 pub fn get_user_from_request<B>(
     request: &axum::http::Request<B>,
 ) -> Option<Arc<AuthenticatedUser>> {
-    request.extensions().get::<Arc<AuthenticatedUser>>().cloned()
+    request
+        .extensions()
+        .get::<Arc<AuthenticatedUser>>()
+        .cloned()
 }

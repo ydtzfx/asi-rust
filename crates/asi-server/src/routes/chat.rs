@@ -2,17 +2,17 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use axum::{
+    Json, Router,
     http::StatusCode,
     response::{
-        sse::{Event as SseEvent, KeepAlive, Sse},
         IntoResponse, Response,
+        sse::{Event as SseEvent, KeepAlive, Sse},
     },
-    Json, Router,
     routing::post,
 };
 use serde::{Deserialize, Serialize};
-use tokio_stream::wrappers::UnboundedReceiverStream;
 use tokio_stream::StreamExt as _;
+use tokio_stream::wrappers::UnboundedReceiverStream;
 
 use asi_ai_sdk::agent::tool_loop::AgentEvent;
 use asi_ai_sdk::types::Message;
@@ -129,7 +129,11 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     let user_id = "anonymous".to_string();
 
     // ---- Step 4: Parse body (already done by the Json extractor) ----
-    let ChatRequestBody { messages, agent: request_agent, session_id } = body.0;
+    let ChatRequestBody {
+        messages,
+        agent: request_agent,
+        session_id,
+    } = body.0;
 
     // Validate input
     if messages.is_empty() {
@@ -206,7 +210,10 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
                 {
                     Ok(new_session) => Some(new_session.id),
                     Err(e) => {
-                        asi_lib::logger::warn("Failed to create session", &[("error", &e.to_string())]);
+                        asi_lib::logger::warn(
+                            "Failed to create session",
+                            &[("error", &e.to_string())],
+                        );
                         None
                     }
                 }
@@ -236,15 +243,19 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     // DeepSeek is primary when DEEPSEEK_API_KEY is set; otherwise use Ollama.
     let provider: Box<dyn asi_ai_sdk::provider::AiProvider> = {
         if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
-            let model =
-                std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
-            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(api_key, model))
+            let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
+            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
+                api_key, model,
+            ))
         } else {
             let ollama_url = std::env::var("OLLAMA_BASE_URL")
                 .unwrap_or_else(|_| "http://localhost:11434/v1".into());
             let ollama_model =
                 std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(ollama_model, ollama_url))
+            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+                ollama_model,
+                ollama_url,
+            ))
         }
     };
 
@@ -252,8 +263,8 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     asi_lib::warmup::warmup().await;
 
     // ---- Step 9: Multi-agent routing ----
-    let is_review = request_agent.as_deref() == Some("review")
-        || last_msg.content.starts_with("/review");
+    let is_review =
+        request_agent.as_deref() == Some("review") || last_msg.content.starts_with("/review");
 
     // ---- Step 10: Agent execution ----
     let messages_clone = messages.clone();
@@ -279,26 +290,25 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
                     AgentEvent::TextDelta { content } => {
                         SseEvent::default().data(content).event("text")
                     }
-                    AgentEvent::ToolCall { name, arguments } => {
-                        SseEvent::default()
-                            .data(
-                                serde_json::json!({ "name": name, "arguments": arguments })
-                                    .to_string(),
-                            )
-                            .event("tool_call")
-                    }
-                    AgentEvent::ToolResult { name, result, truncated } => {
-                        SseEvent::default()
-                            .data(
-                                serde_json::json!({
-                                    "name": name,
-                                    "result": result,
-                                    "truncated": truncated
-                                })
-                                .to_string(),
-                            )
-                            .event("tool_result")
-                    }
+                    AgentEvent::ToolCall { name, arguments } => SseEvent::default()
+                        .data(
+                            serde_json::json!({ "name": name, "arguments": arguments }).to_string(),
+                        )
+                        .event("tool_call"),
+                    AgentEvent::ToolResult {
+                        name,
+                        result,
+                        truncated,
+                    } => SseEvent::default()
+                        .data(
+                            serde_json::json!({
+                                "name": name,
+                                "result": result,
+                                "truncated": truncated
+                            })
+                            .to_string(),
+                        )
+                        .event("tool_result"),
                     AgentEvent::Done { usage } => {
                         let data = usage
                             .map(|u| serde_json::to_string(&u).unwrap())

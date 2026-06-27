@@ -5,7 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::LazyLock;
 use tokio::process::Command;
-use tokio::time::{timeout, Duration};
+use tokio::time::{Duration, timeout};
 
 const MAX_OUTPUT_CHARS: usize = 8000;
 const TIMEOUT_SECONDS: u64 = 30;
@@ -25,10 +25,32 @@ static SAFE_COMMANDS: LazyLock<HashMap<&'static str, CommandConfig>> = LazyLock:
         "git",
         CommandConfig {
             subcommands: Some(vec![
-                "status", "diff", "log", "show", "branch", "stash", "add",
-                "commit", "push", "pull", "fetch", "checkout", "merge",
-                "rebase", "tag", "blame", "describe", "shortlog", "rev-parse",
-                "config", "clean", "mv", "rm", "reset", "help", "version",
+                "status",
+                "diff",
+                "log",
+                "show",
+                "branch",
+                "stash",
+                "add",
+                "commit",
+                "push",
+                "pull",
+                "fetch",
+                "checkout",
+                "merge",
+                "rebase",
+                "tag",
+                "blame",
+                "describe",
+                "shortlog",
+                "rev-parse",
+                "config",
+                "clean",
+                "mv",
+                "rm",
+                "reset",
+                "help",
+                "version",
             ]),
             reject_flags: true,
         },
@@ -37,10 +59,27 @@ static SAFE_COMMANDS: LazyLock<HashMap<&'static str, CommandConfig>> = LazyLock:
         "npm",
         CommandConfig {
             subcommands: Some(vec![
-                "install", "ci", "run", "test", "build", "start", "stop",
-                "restart", "publish", "pack", "audit", "fund", "update",
-                "outdated", "ls", "uninstall", "link", "dedupe", "prune",
-                "help", "version",
+                "install",
+                "ci",
+                "run",
+                "test",
+                "build",
+                "start",
+                "stop",
+                "restart",
+                "publish",
+                "pack",
+                "audit",
+                "fund",
+                "update",
+                "outdated",
+                "ls",
+                "uninstall",
+                "link",
+                "dedupe",
+                "prune",
+                "help",
+                "version",
             ]),
             reject_flags: true,
         },
@@ -49,9 +88,24 @@ static SAFE_COMMANDS: LazyLock<HashMap<&'static str, CommandConfig>> = LazyLock:
         "cargo",
         CommandConfig {
             subcommands: Some(vec![
-                "build", "run", "test", "check", "clippy", "fmt", "doc",
-                "publish", "update", "clean", "add", "remove", "tree",
-                "audit", "help", "metadata", "locate-project", "version",
+                "build",
+                "run",
+                "test",
+                "check",
+                "clippy",
+                "fmt",
+                "doc",
+                "publish",
+                "update",
+                "clean",
+                "add",
+                "remove",
+                "tree",
+                "audit",
+                "help",
+                "metadata",
+                "locate-project",
+                "version",
             ]),
             reject_flags: true,
         },
@@ -78,9 +132,31 @@ static SAFE_COMMANDS: LazyLock<HashMap<&'static str, CommandConfig>> = LazyLock:
 fn is_shell_safe(input: &str) -> bool {
     // Check each character for shell metacharacters that could enable injection.
     // This avoids regex escaping issues inside character classes.
-    !input.chars().any(|c| matches!(c, ';' | '&' | '|' | '`' | '$' | '(' | ')' |
-        '{' | '}' | '[' | ']' | '<' | '>' | '!' | '#' | '~' | '*' | '?' |
-        '\\' | '\n' | '\r'))
+    !input.chars().any(|c| {
+        matches!(
+            c,
+            ';' | '&'
+                | '|'
+                | '`'
+                | '$'
+                | '('
+                | ')'
+                | '{'
+                | '}'
+                | '['
+                | ']'
+                | '<'
+                | '>'
+                | '!'
+                | '#'
+                | '~'
+                | '*'
+                | '?'
+                | '\\'
+                | '\n'
+                | '\r'
+        )
+    })
 }
 
 /// Truncate output to MAX_OUTPUT_CHARS and return a truncation flag.
@@ -117,8 +193,7 @@ impl Tool for RunCommandTool {
             def_type: "function".into(),
             function: FunctionDef {
                 name: "runCommand".into(),
-                description: "Execute a terminal command with strict security controls. "
-                    .into(),
+                description: "Execute a terminal command with strict security controls. ".into(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -145,9 +220,9 @@ impl Tool for RunCommandTool {
             .ok_or_else(|| ToolError::InvalidArgs("Missing 'command' argument".into()))?;
 
         // 1. Command allowlist
-        let config = SAFE_COMMANDS
-            .get(cmd_name)
-            .ok_or_else(|| ToolError::Execution(format!("Command '{}' is not allowed", cmd_name)))?;
+        let config = SAFE_COMMANDS.get(cmd_name).ok_or_else(|| {
+            ToolError::Execution(format!("Command '{}' is not allowed", cmd_name))
+        })?;
 
         let args: Vec<String> = arguments
             .get("args")
@@ -161,15 +236,14 @@ impl Tool for RunCommandTool {
             .unwrap_or_default();
 
         // 2. Subcommand allowlist
-        if let Some(allowed_subcommands) = &config.subcommands {
-            if let Some(first_arg) = args.first() {
-                if !allowed_subcommands.contains(&first_arg.as_str()) {
-                    return Err(ToolError::Execution(format!(
-                        "Subcommand '{}' is not allowed for '{}'",
-                        first_arg, cmd_name
-                    )));
-                }
-            }
+        if let Some(allowed_subcommands) = &config.subcommands
+            && let Some(first_arg) = args.first()
+            && !allowed_subcommands.contains(&first_arg.as_str())
+        {
+            return Err(ToolError::Execution(format!(
+                "Subcommand '{}' is not allowed for '{}'",
+                first_arg, cmd_name
+            )));
         }
 
         // 3. Flag rejection
@@ -225,24 +299,22 @@ impl Tool for RunCommandTool {
                 }
 
                 if was_truncated {
-                    Ok(format!("{}\n\n[Output truncated at {} characters]",
-                        truncated, MAX_OUTPUT_CHARS))
+                    Ok(format!(
+                        "{}\n\n[Output truncated at {} characters]",
+                        truncated, MAX_OUTPUT_CHARS
+                    ))
                 } else {
                     Ok(truncated)
                 }
             }
-            Ok(Err(e)) => {
-                Err(ToolError::Execution(format!(
-                    "Failed to execute command '{}': {}",
-                    cmd_name, e
-                )))
-            }
-            Err(_) => {
-                Err(ToolError::Execution(format!(
-                    "Command '{}' timed out after {} seconds",
-                    cmd_name, TIMEOUT_SECONDS
-                )))
-            }
+            Ok(Err(e)) => Err(ToolError::Execution(format!(
+                "Failed to execute command '{}': {}",
+                cmd_name, e
+            ))),
+            Err(_) => Err(ToolError::Execution(format!(
+                "Command '{}' timed out after {} seconds",
+                cmd_name, TIMEOUT_SECONDS
+            ))),
         }
     }
 }

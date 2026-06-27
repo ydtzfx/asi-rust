@@ -16,10 +16,7 @@ pub fn run_startup_hooks() {
         interval.tick().await;
         loop {
             interval.tick().await;
-            asi_lib::logger::info(
-                "Auto-evolve check triggered",
-                &[("component", "startup")],
-            );
+            asi_lib::logger::info("Auto-evolve check triggered", &[("component", "startup")]);
         }
     });
 
@@ -30,10 +27,7 @@ pub fn run_startup_hooks() {
         interval.tick().await;
         loop {
             interval.tick().await;
-            asi_lib::logger::info(
-                "Session cleanup triggered",
-                &[("component", "startup")],
-            );
+            asi_lib::logger::info("Session cleanup triggered", &[("component", "startup")]);
         }
     });
 }

@@ -24,7 +24,11 @@ pub fn flatten<T: Clone>(nested: &[Vec<T>]) -> Vec<T> {
 
 pub fn uniq<T: Eq + Hash + Clone>(items: &[T]) -> Vec<T> {
     let mut seen = std::collections::HashSet::new();
-    items.iter().filter(|item| seen.insert((*item).clone())).cloned().collect()
+    items
+        .iter()
+        .filter(|item| seen.insert((*item).clone()))
+        .cloned()
+        .collect()
 }
 
 pub fn group_by<T, K, F>(items: &[T], key_fn: F) -> HashMap<K, Vec<T>>

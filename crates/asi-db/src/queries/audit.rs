@@ -11,7 +11,7 @@ pub async fn insert_audit_log(
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         "INSERT INTO audit_log (user_id, action, summary, detail_json, session_id, ip)
-         VALUES (?, ?, ?, ?, ?, ?)"
+         VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(user_id)
     .bind(action)

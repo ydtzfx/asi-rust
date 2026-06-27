@@ -61,10 +61,9 @@ pub fn build_default_registry() -> ModelRegistry {
     }
 
     // Ollama is fallback
-    let ollama_url = std::env::var("OLLAMA_BASE_URL")
-        .unwrap_or_else(|_| "http://localhost:11434/v1".into());
-    let ollama_model =
-        std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
+    let ollama_url =
+        std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".into());
+    let ollama_model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
     providers.push(Box::new(OllamaProvider::new(ollama_model, ollama_url)));
 
     ModelRegistry::new(providers)

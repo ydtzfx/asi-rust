@@ -15,10 +15,7 @@ pub enum ToolError {
 #[async_trait]
 pub trait Tool: Send + Sync {
     fn definition(&self) -> ToolDefinition;
-    async fn execute(
-        &self,
-        arguments: serde_json::Value,
-    ) -> Result<String, ToolError>;
+    async fn execute(&self, arguments: serde_json::Value) -> Result<String, ToolError>;
 }
 
 /// Wrapper to store tools in a HashMap by name.

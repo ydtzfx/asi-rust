@@ -14,15 +14,12 @@ use asi_ai_sdk::types::ToolDefinition;
 // ---------------------------------------------------------------------------
 
 fn collect_tools() -> Vec<ToolDefinition> {
-    let mut defs: Vec<ToolDefinition> = Vec::new();
-
-    // Code-agent tools
-    defs.push(ReadFileTool.definition());
-    defs.push(WriteFileTool.definition());
-    defs.push(ListDirectoryTool.definition());
-    defs.push(RunCommandTool.definition());
-
-    defs
+    vec![
+        ReadFileTool.definition(),
+        WriteFileTool.definition(),
+        ListDirectoryTool.definition(),
+        RunCommandTool.definition(),
+    ]
 }
 
 // ---------------------------------------------------------------------------

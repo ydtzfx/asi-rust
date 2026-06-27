@@ -49,9 +49,6 @@ pub async fn update_existing_session(
     .await
 }
 
-pub async fn get_session(
-    pool: &SqlitePool,
-    id: &str,
-) -> Result<Option<Session>, sqlx::Error> {
+pub async fn get_session(pool: &SqlitePool, id: &str) -> Result<Option<Session>, sqlx::Error> {
     sessions::get_session(pool, id).await
 }

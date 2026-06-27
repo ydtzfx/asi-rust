@@ -17,8 +17,7 @@ impl Tool for WriteFileTool {
             def_type: "function".into(),
             function: FunctionDef {
                 name: "writeFile".into(),
-                description: "Write content to a file on the local filesystem. "
-                    .into(),
+                description: "Write content to a file on the local filesystem. ".into(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -50,20 +49,24 @@ impl Tool for WriteFileTool {
 
         let safe_path = asi_lib::safe_path::resolve_safe_path(path)
             .await
-            .map_err(|e| ToolError::Execution(e))?;
+            .map_err(ToolError::Execution)?;
 
         // Create parent directories if they don't exist
         if let Some(parent) = Path::new(&safe_path).parent() {
-            tokio::fs::create_dir_all(parent)
-                .await
-                .map_err(|e| ToolError::Execution(format!("Failed to create directories: {}", e)))?;
+            tokio::fs::create_dir_all(parent).await.map_err(|e| {
+                ToolError::Execution(format!("Failed to create directories: {}", e))
+            })?;
         }
 
         tokio::fs::write(&safe_path, content)
             .await
             .map_err(|e| ToolError::Execution(format!("Failed to write file: {}", e)))?;
 
-        Ok(format!("Successfully wrote {} bytes to {}", content.len(), path))
+        Ok(format!(
+            "Successfully wrote {} bytes to {}",
+            content.len(),
+            path
+        ))
     }
 }
 
@@ -81,7 +84,9 @@ mod tests {
 
         // Clean up if leftover
         let _ = fs::remove_file(
-            asi_lib::safe_path::resolve_safe_path(test_path).await.unwrap(),
+            asi_lib::safe_path::resolve_safe_path(test_path)
+                .await
+                .unwrap(),
         )
         .await;
 
@@ -92,7 +97,9 @@ mod tests {
         assert!(result.unwrap().contains("Successfully wrote"));
 
         // Verify file was written
-        let abs = asi_lib::safe_path::resolve_safe_path(test_path).await.unwrap();
+        let abs = asi_lib::safe_path::resolve_safe_path(test_path)
+            .await
+            .unwrap();
         let written = fs::read_to_string(&abs).await.unwrap();
         assert_eq!(written, test_content);
 
@@ -104,16 +111,12 @@ mod tests {
     async fn test_write_file_missing_args() {
         let tool = WriteFileTool;
         // Missing path
-        let result = tool
-            .execute(json!({ "content": "data" }))
-            .await;
+        let result = tool.execute(json!({ "content": "data" })).await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ToolError::InvalidArgs(_)));
 
         // Missing content
-        let result = tool
-            .execute(json!({ "path": "test.txt" }))
-            .await;
+        let result = tool.execute(json!({ "path": "test.txt" })).await;
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), ToolError::InvalidArgs(_)));
     }
@@ -146,7 +149,9 @@ mod tests {
         assert!(result.is_ok());
 
         // Verify file was written
-        let abs = asi_lib::safe_path::resolve_safe_path(test_path).await.unwrap();
+        let abs = asi_lib::safe_path::resolve_safe_path(test_path)
+            .await
+            .unwrap();
         let written = fs::read_to_string(&abs).await.unwrap();
         assert_eq!(written, test_content);
 

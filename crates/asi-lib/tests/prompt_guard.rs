@@ -32,9 +32,8 @@ fn test_detect_dan_mode() {
 
 #[test]
 fn test_clean_text_no_false_positive() {
-    let result = detect_prompt_injection(
-        "What is the capital of France? Please explain in detail.",
-    );
+    let result =
+        detect_prompt_injection("What is the capital of France? Please explain in detail.");
     assert!(
         result.is_empty(),
         "clean text should have no matches, got: {:?}",

@@ -17,8 +17,7 @@ impl Tool for ReadFileTool {
             def_type: "function".into(),
             function: FunctionDef {
                 name: "readFile".into(),
-                description: "Read the contents of a file from the local filesystem. "
-                    .into(),
+                description: "Read the contents of a file from the local filesystem. ".into(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -41,7 +40,7 @@ impl Tool for ReadFileTool {
 
         let safe_path = asi_lib::safe_path::resolve_safe_path(path)
             .await
-            .map_err(|e| ToolError::Execution(e))?;
+            .map_err(ToolError::Execution)?;
 
         let content = tokio::fs::read_to_string(&safe_path)
             .await
@@ -60,9 +59,7 @@ mod tests {
     async fn test_read_file_success() {
         let tool = ReadFileTool;
         // Cargo.toml always exists at project root
-        let result = tool
-            .execute(json!({ "path": "Cargo.toml" }))
-            .await;
+        let result = tool.execute(json!({ "path": "Cargo.toml" })).await;
         assert!(result.is_ok());
         let content = result.unwrap();
         assert!(!content.is_empty(), "File content should not be empty");
@@ -88,9 +85,7 @@ mod tests {
     #[tokio::test]
     async fn test_read_file_path_traversal_blocked() {
         let tool = ReadFileTool;
-        let result = tool
-            .execute(json!({ "path": "../etc/passwd" }))
-            .await;
+        let result = tool.execute(json!({ "path": "../etc/passwd" })).await;
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
         assert!(err.contains("Access denied") || err.contains("denied"));
