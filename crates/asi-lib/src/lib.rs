@@ -1,8 +1,15 @@
 pub mod cache;
+pub mod concurrency;
 pub mod config;
+pub mod emitter;
 pub mod errors;
 pub mod flags;
 pub mod logger;
+pub mod prompt_guard;
+pub mod rate_limit;
 pub mod retry;
 pub mod safe_path;
-// utilities will be added in Task 4
+pub mod telemetry;
+pub mod tier;
+pub mod utils;
+pub mod warmup;
