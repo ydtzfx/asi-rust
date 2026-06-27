@@ -21,9 +21,11 @@ tower = "0.5"
 tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
 leptos = { version = "0.7", features = ["ssr"] }
 leptos_axum = "0.7"
+async-trait = "0.1"
 
 [dev-dependencies]
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tower = "0.5"
+futures-core = "0.3"

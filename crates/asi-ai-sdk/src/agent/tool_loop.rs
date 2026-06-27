@@ -28,6 +28,16 @@ impl<P: AiProvider> ToolLoopAgent<P> {
         Self { provider, instructions, tools, max_steps }
     }
 
+    /// Maximum number of steps the agent can take in a single run.
+    pub fn max_steps(&self) -> usize {
+        self.max_steps
+    }
+
+    /// The instruction string configured for this agent.
+    pub fn instructions(&self) -> &str {
+        &self.instructions
+    }
+
     /// Execute the agent loop with streaming output.
     /// Returns a channel receiver for AgentEvents.
     pub async fn execute(
