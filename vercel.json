@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cargo build --release && npx @tailwindcss/cli -i styles/input.css -o static/styles.css --minify",
+  "outputDirectory": "static",
+  "installCommand": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y",
+  "framework": null,
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+}
