@@ -1,0 +1,22 @@
+[package]
+name = "asi-server"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+asi-db = { path = "../asi-db" }
+asi-lib = { path = "../asi-lib" }
+asi-auth = { path = "../asi-auth" }
+asi-ai-sdk = { path = "../asi-ai-sdk" }
+asi-app = { path = "../asi-app" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+thiserror.workspace = true
+axum = { version = "0.8", features = ["macros"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["cors", "trace", "limit"] }
+leptos = { version = "0.7", features = ["ssr"] }
+leptos_axum = "0.7"

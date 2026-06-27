@@ -1,0 +1,12 @@
+[package]
+name = "asi-app"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+leptos = { version = "0.7", features = ["csr", "ssr"] }
+leptos_router = "0.7"
+leptos_meta = "0.7"
+serde.workspace = true
+serde_json.workspace = true
+wasm-bindgen = "0.2"
