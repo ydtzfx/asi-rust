@@ -11,4 +11,5 @@ pub mod search;
 pub mod sessions;
 pub mod stats;
 pub mod tools;
+pub mod user;
 pub mod version;

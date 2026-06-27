@@ -1,3 +1,4 @@
+pub mod chat;
 mod footer;
 mod navbar;
 

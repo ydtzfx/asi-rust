@@ -20,7 +20,8 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
         .merge(routes::search::routes())
         .merge(routes::tools::routes())
         .merge(routes::docs::routes())
-        .merge(routes::eval::routes());
+        .merge(routes::eval::routes())
+        .merge(routes::user::routes());
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
