@@ -132,6 +132,18 @@ Layers are applied bottom-to-top (innermost first):
 
 The frontend is `static/index.html` — a standalone chat UI served by `tower-http::ServeDir`. It connects to `/api/chat` via SSE, renders markdown, and displays tool calls/results. The Leptos SSR frontend (`asi-app`) is currently disabled due to a leptos_meta 0.7.8 rendering panic.
 
+## Skills
+
+| Command | Purpose |
+|---------|---------|
+| `/run` | Build and start the server |
+| `/test` | Run test suite (all, single crate, single test) |
+| `/deploy` | Full CI pipeline + deploy to production |
+| `/review` | Comprehensive code review (security, perf, style) |
+| `/migrate` | Database migration management + backup |
+| `/monitor` | Health checks, metrics, logs, alerts |
+| `/release` | Version bump, changelog, tag, push |
+
 ## Note on Rust edition
 
 This project uses Rust **edition 2024** (`Cargo.toml` line 6). Ensure `rustc` ≥ 1.96.
