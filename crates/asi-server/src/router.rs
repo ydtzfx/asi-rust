@@ -31,12 +31,23 @@ pub fn build_test_router() -> Router {
 }
 
 fn build_api_routes(require_auth: bool) -> Router {
-    let public_routes = Router::new()
+    let mut public_routes = Router::new()
         .merge(routes::health::routes())
-        .merge(routes::version::routes())
-        .merge(routes::docs::routes());
+        .merge(routes::version::routes());
 
-    let protected = Router::new()
+    // Docs/OpenAPI are public only when explicitly enabled.
+    let public_docs = std::env::var("ASI_PUBLIC_DOCS")
+        .map(|v| v == "true" || v == "1")
+        .unwrap_or(false);
+    if public_docs {
+        public_routes = public_routes.merge(routes::docs::routes());
+    }
+
+    let mut protected = Router::new();
+    if !public_docs {
+        protected = protected.merge(routes::docs::routes());
+    }
+    protected = protected
         .merge(routes::chat::routes())
         .merge(routes::flags::routes())
         .merge(routes::sessions::routes())
