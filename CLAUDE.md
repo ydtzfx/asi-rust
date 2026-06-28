@@ -27,7 +27,7 @@ cargo build
 # Build (release)
 cargo build --release
 
-# Run all 107 tests
+# Run all ~170 tests
 cargo test
 
 # Run a single test or test module
@@ -95,11 +95,12 @@ Browser → POST /api/chat → auth middleware (asi-auth) → chat_handler (chat
 
 The agent loop runs inside a `tokio::spawn` task. Each iteration:
 1. Builds `ChatRequest` with conversation + tool definitions
-2. Calls `provider.chat()` (non-streaming, `max_tokens=4096`)
-3. Sends text content as `TextDelta`, checks for `tool_calls` in the response
+2. Calls `provider.chat_stream()` (first iteration, token-by-token) or `provider.chat()` (subsequent tool-call iterations, `max_tokens=4096`)
+3. Sends text content as `TextDelta` (streaming for first call), checks for `tool_calls`
 4. If tool calls present: executes each via `ToolMap`, injects `Role::Tool` messages, loops
 5. If no tool calls: sends `Done` with usage
 6. `CancelToken` checks and `tx.send().is_err()` guard against orphaned tasks on client disconnect
+7. LLM response cache (5-min TTL) avoids redundant calls for identical queries
 
 ### Auth (`asi-auth`)
 
@@ -156,7 +157,8 @@ Layers are applied bottom-to-top (innermost first):
 | `crates/asi-lib/src/prompt_guard.rs` | 16-pattern prompt injection detection |
 | `crates/asi-server/src/agent/tools/run_command.rs` | Command execution allowlist + metachar filter |
 | `crates/asi-server/src/middleware.rs` | ResponseTimeLayer + GlobalRateLimitLayer |
-| `crates/asi-server/src/startup.rs` | Background tasks: session cleanup, auto-evolve timer |
+| `crates/asi-server/src/startup.rs` | Enterprise runtime init (cortex, defense, evolution), watchdog, health loop, session cleanup |
+| `crates/asi-server/src/enterprise.rs` | Cross-crate integration — initializes all 15+ subsystems at startup |
 
 ## Frontend
 
