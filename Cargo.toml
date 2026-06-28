@@ -6,7 +6,7 @@ members = ["crates/*"]
 edition = "2024"
 version = "0.1.0"
 license = "MIT"
-repository = "https://github.com/asi/asi-rust"
+repository = "https://github.com/ydtzfx/asi-rust"
 
 [workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
