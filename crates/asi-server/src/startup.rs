@@ -16,6 +16,10 @@ pub fn run_startup_hooks() {
     let config = AutomationConfig::from_env();
     let engine = get_heal_engine();
 
+    // ---- Initialize enterprise runtime (cross-crate integration) ----
+    crate::enterprise::init_enterprise(engine.clone());
+    crate::enterprise::start_enterprise_loop();
+
     // ---- Watchdog (kill on hang) ----
     if config.watchdog_enabled {
         let wd = Watchdog::new(config.watchdog_timeout);

@@ -10,6 +10,10 @@ asi-auth = { path = "../asi-auth" }
 asi-ai-sdk = { path = "../asi-ai-sdk" }
 asi-app = { path = "../asi-app" }
 asi-automation = { path = "../asi-automation" }
+asi-cortex = { path = "../asi-cortex" }
+asi-defense = { path = "../asi-defense" }
+asi-evolution = { path = "../asi-evolution" }
+asi-devops = { path = "../asi-devops" }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
