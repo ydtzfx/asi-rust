@@ -93,6 +93,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-business"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-cortex"
 version = "0.1.0"
 dependencies = [
@@ -170,6 +180,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-mesh"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-server"
 version = "0.1.0"
 dependencies = [
@@ -195,6 +215,16 @@ dependencies = [
  "tower-http",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "asi-twin"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
