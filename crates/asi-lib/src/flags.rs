@@ -1,6 +1,14 @@
 use std::collections::HashMap;
 use std::sync::{LazyLock, OnceLock, RwLock};
 
+#[cfg(test)]
+use std::cell::RefCell;
+
+#[cfg(test)]
+thread_local! {
+    static TEST_OVERRIDES: RefCell<HashMap<String, bool>> = RefCell::new(HashMap::new());
+}
+
 /// Default values for production-safe flags.
 static DEFAULTS: OnceLock<HashMap<&'static str, bool>> = OnceLock::new();
 
@@ -24,6 +32,14 @@ static OVERRIDES: LazyLock<RwLock<HashMap<String, bool>>> =
 /// Check if a feature flag is enabled.
 /// Priority: runtime set_flag > FEATURE_<NAME> env var > default.
 pub fn flag(name: &str) -> bool {
+    // Test-mode override (thread-local, no race)
+    #[cfg(test)]
+    {
+        let val = TEST_OVERRIDES.with(|cell| cell.borrow().get(name).copied());
+        if let Some(v) = val {
+            return v;
+        }
+    }
     // Runtime override
     if let Ok(overrides) = OVERRIDES.read()
         && let Some(&v) = overrides.get(name)
@@ -42,12 +58,28 @@ pub fn flag(name: &str) -> bool {
 }
 
 pub fn set_flag(name: &str) {
+    #[cfg(test)]
+    {
+        TEST_OVERRIDES.with(|cell| {
+            cell.borrow_mut().insert(name.to_string(), true);
+        });
+        return;
+    }
+    #[allow(unreachable_code)]
     if let Ok(mut overrides) = OVERRIDES.write() {
         overrides.insert(name.to_string(), true);
     }
 }
 
 pub fn reset_flag(name: &str) {
+    #[cfg(test)]
+    {
+        TEST_OVERRIDES.with(|cell| {
+            cell.borrow_mut().remove(name);
+        });
+        return;
+    }
+    #[allow(unreachable_code)]
     if let Ok(mut overrides) = OVERRIDES.write() {
         overrides.remove(name);
     }

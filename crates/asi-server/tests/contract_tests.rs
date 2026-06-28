@@ -68,6 +68,7 @@ async fn health_endpoint_contract() {
 }
 
 #[tokio::test]
+#[ignore = "requires external AI provider (Ollama/DeepSeek) running"]
 async fn ready_endpoint_contract() {
     let app = app();
     let response = app
