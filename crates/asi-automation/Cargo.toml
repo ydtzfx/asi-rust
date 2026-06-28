@@ -1,0 +1,10 @@
+[package]
+name = "asi-automation"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+asi-lib = { path = "../asi-lib" }
+asi-db = { path = "../asi-db" }
+tokio.workspace = true
+tracing.workspace = true

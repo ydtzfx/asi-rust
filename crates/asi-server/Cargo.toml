@@ -9,6 +9,7 @@ asi-lib = { path = "../asi-lib" }
 asi-auth = { path = "../asi-auth" }
 asi-ai-sdk = { path = "../asi-ai-sdk" }
 asi-app = { path = "../asi-app" }
+asi-automation = { path = "../asi-automation" }
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true

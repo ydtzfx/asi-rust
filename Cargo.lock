@@ -83,6 +83,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-automation"
+version = "0.1.0"
+dependencies = [
+ "asi-db",
+ "asi-lib",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-db"
 version = "0.1.0"
 dependencies = [
@@ -117,6 +127,7 @@ dependencies = [
  "asi-ai-sdk",
  "asi-app",
  "asi-auth",
+ "asi-automation",
  "asi-db",
  "asi-lib",
  "async-trait",

@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asi-server
+  labels:
+    app: asi-server
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: asi-server
+  template:
+    metadata:
+      labels:
+        app: asi-server
+    spec:
+      containers:
+        - name: asi-server
+          image: ghcr.io/ydtzfx/asi-rust:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: DATABASE_URL
+              value: /data/asi.db
+            - name: AUTO_WATCHDOG
+              value: "true"
+            - name: AUTO_SELF_HEAL
+              value: "true"
+            - name: AUTO_BACKUP
+              value: "true"
+          envFrom:
+            - secretRef:
+                name: asi-secrets
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/ready
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 2
+          startupProbe:
+            httpGet:
+              path: /api/health
+              port: 3000
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: asi-data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asi-server
+spec:
+  selector:
+    app: asi-server
+  ports:
+    - port: 3000
+      targetPort: 3000
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: asi-server-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: asi-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70

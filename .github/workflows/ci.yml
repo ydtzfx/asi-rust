@@ -130,3 +130,24 @@ jobs:
 
       - name: Deploy to Vercel
         run: vercel deploy --prod --token=${{ secrets.VERCEL_TOKEN }} --yes
+
+      - name: Verify deployment health
+        run: |
+          sleep 15
+          for i in 1 2 3 4 5; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://asi-rust.vercel.app/api/health || echo "000")
+            if [ "$STATUS" = "200" ]; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $STATUS — retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check FAILED after 5 attempts. Triggering rollback."
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Deployment health check failed. Rolling back..."
+          vercel rollback --token=${{ secrets.VERCEL_TOKEN }} --yes || true
