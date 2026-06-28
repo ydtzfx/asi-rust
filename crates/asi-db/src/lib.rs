@@ -10,16 +10,23 @@ use std::sync::OnceLock;
 static DB_POOL: OnceLock<SqlitePool> = OnceLock::new();
 
 /// Initialize the database pool. Must be called once at startup.
-/// Enables WAL mode and foreign keys.
+/// Enables WAL mode, foreign keys, and a busy timeout for concurrent writes.
+/// Pool size is configurable via `DATABASE_POOL_SIZE` env var (default: 10).
 pub async fn init_db(database_url: &str) -> Result<SqlitePool, sqlx::Error> {
+    let pool_size: u32 = std::env::var("DATABASE_POOL_SIZE")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(10);
+
     let opts = SqliteConnectOptions::new()
         .filename(database_url)
         .pragma("journal_mode", "WAL")
         .pragma("foreign_keys", "ON")
+        .pragma("busy_timeout", "5000")
         .create_if_missing(true);
 
     let pool = SqlitePoolOptions::new()
-        .max_connections(5)
+        .max_connections(pool_size)
         .connect_with(opts)
         .await?;
 

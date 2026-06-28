@@ -113,17 +113,22 @@ static SAFE_COMMANDS: LazyLock<HashMap<&'static str, CommandConfig>> = LazyLock:
     m.insert(
         "npx",
         CommandConfig {
-            subcommands: None, // any subcommand allowed
+            subcommands: Some(vec![
+                "tailwindcss",
+                "eslint",
+                "prettier",
+                "tsc",
+                "vitest",
+                "jest",
+                "playwright",
+            ]),
             reject_flags: true,
         },
     );
-    m.insert(
-        "node",
-        CommandConfig {
-            subcommands: None, // any script path allowed
-            reject_flags: false,
-        },
-    );
+    // NOTE: "node" is intentionally NOT in the allowlist.
+    // The `-e` flag enables arbitrary code execution, and even without it,
+    // a malicious script written via writeFile could be executed.
+    // Use `cargo run` or `npm run` to execute project code instead.
     m
 });
 
@@ -178,7 +183,7 @@ fn truncate_output(output: &str) -> (String, bool) {
 /// Tool that executes a shell command with strict security controls.
 ///
 /// Security layers:
-/// 1. Command allowlist (git, npm, cargo, npx, node)
+/// 1. Command allowlist (git, npm, cargo, npx)
 /// 2. Per-command subcommand allowlist
 /// 3. Flag rejection for dangerous commands
 /// 4. Shell metacharacter rejection
@@ -199,7 +204,7 @@ impl Tool for RunCommandTool {
                     "properties": {
                         "command": {
                             "type": "string",
-                            "description": "Command to run — one of: git, npm, cargo, npx, node"
+                            "description": "Command to run — one of: git, npm, cargo, npx"
                         },
                         "args": {
                             "type": "array",
@@ -387,19 +392,29 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_run_command_npx_allows_any_subcommand() {
-        // npx allows any subcommand
+    async fn test_run_command_npx_allowed_subcommand_only() {
+        // npx only allows specific subcommands (tailwindcss, eslint, prettier, etc.)
         let tool = RunCommandTool;
-        // This might fail because npx might not find the command,
-        // but it should not be rejected by our allowlist
+        // Blocked subcommand should be rejected by allowlist
         let result = tool
             .execute(json!({ "command": "npx", "args": ["some-random-package"] }))
             .await;
-        // We expect execution error (not found), not an allowlist rejection
         assert!(result.is_err());
-        // Should be an execution failure (it won't find the package),
-        // not an "is not allowed" message
-        let _ = result.unwrap_err();
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("not allowed"), "Expected allowlist rejection, got: {}", err);
+
+        // Allowed subcommand should pass allowlist (may fail at execution)
+        let result = tool
+            .execute(json!({ "command": "npx", "args": ["tailwindcss", "--help"] }))
+            .await;
+        // Should fail due to flag rejection (--help uses --), not allowlist
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("flag") || err.contains("allowlist") || err.contains("allowed"),
+            "Expected flag or execution error, got: {}",
+            err
+        );
     }
 
     #[test]

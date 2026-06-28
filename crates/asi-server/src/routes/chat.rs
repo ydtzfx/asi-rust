@@ -2,7 +2,7 @@ use std::convert::Infallible;
 use std::time::Duration;
 
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     http::StatusCode,
     response::{
         IntoResponse, Response,
@@ -10,6 +10,7 @@ use axum::{
     },
     routing::post,
 };
+use std::sync::Arc;
 use serde::{Deserialize, Serialize};
 use tokio_stream::StreamExt as _;
 use tokio_stream::wrappers::UnboundedReceiverStream;
@@ -70,25 +71,31 @@ pub fn routes() -> Router {
 ///
 /// Executes the complete middleware pipeline before streaming an agent response:
 ///
-///  1. Extract IP -> rate limit check (20/min) -> 429
+///  1. Extract authenticated user -> rate limit check (20/min) -> 429
 ///  2. Acquire concurrency slot (max 4) -> 503
-///  3. Extract authenticated user (Clerk extension, X-User-ID header, anonymous)
-///  4. Parse JSON body { messages, agent?, session_id? }
-///  5. Prompt-injection defence (if flag enabled) -> 403
-///  6. Session persistence (if flag) — create / update session record
-///  7. Audit logging (if flag) — insert audit log entry
-///  8. Build model registry, select active provider
-///  9. Multi-agent routing: /review or agent="review" -> review agent, else code agent
-/// 10. agent.execute(messages) -> mpsc channel
-/// 11. Convert AgentEvent stream -> Axum SSE response with keep-alive
-/// 12. Release concurrency slot (stream runs independently)
-async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
+///  3. Parse JSON body { messages, agent?, session_id? }
+///  4. Prompt-injection defence (if flag enabled) -> 403
+///  5. Session persistence (if flag) — create / update session record
+///  6. Audit logging (if flag) — insert audit log entry
+///  7. Build model registry, select active provider
+///  8. Multi-agent routing: /review or agent="review" -> review agent, else code agent
+///  9. agent.execute(messages) -> mpsc channel
+/// 10. Convert AgentEvent stream -> Axum SSE response with keep-alive
+/// 11. Release concurrency slot (stream runs independently)
+async fn chat_handler(
+    user_ext: Option<Extension<Arc<asi_auth::types::AuthenticatedUser>>>,
+    body: Json<ChatRequestBody>,
+) -> Response {
     // ---- Step 1: Rate limit check ----
-    // In production behind a reverse proxy, extract from X-Forwarded-For;
-    // local development falls back to a static key.
-    let ip = "unknown"; // Will be overridden by ConnectInfo or header extraction
+    // Rate-limit by authenticated user ID; fall back to a generic key when
+    // auth middleware is not present (e.g. integration tests).
+    let user_id = user_ext
+        .as_ref()
+        .map(|u| u.0.sub.clone())
+        .unwrap_or_else(|| "anonymous".to_string());
+    let rate_limit_key = &user_id;
 
-    match RATE_LIMITER.check(ip, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS) {
+    match RATE_LIMITER.check(rate_limit_key, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS) {
         asi_lib::rate_limit::RateLimitResult::RetryAfter(ms) => {
             return (
                 StatusCode::TOO_MANY_REQUESTS,
@@ -122,11 +129,7 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     }
     // Slot is released in Step 12 after the stream is set up.
 
-    // ---- Step 3: Extract user ----
-    // In production the Clerk auth middleware injects AuthenticatedUser into
-    // request extensions.  For local/test scenarios the X-User-ID header is
-    // used as a fallback.
-    let user_id = "anonymous".to_string();
+    // ---- Step 3: User already extracted in Step 1 ----
 
     // ---- Step 4: Parse body (already done by the Json extractor) ----
     let ChatRequestBody {
@@ -142,6 +145,34 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
             StatusCode::BAD_REQUEST,
             Json(ChatErrorBody {
                 error: "No messages provided".to_string(),
+            }),
+        )
+            .into_response();
+    }
+
+    // Enforce message count and total content length limits.
+    const MAX_MESSAGES: usize = 50;
+    const MAX_CONTENT_LEN: usize = 100_000; // 100 KB total
+    if messages.len() > MAX_MESSAGES {
+        CONCURRENCY.release();
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ChatErrorBody {
+                error: format!("Too many messages (max {})", MAX_MESSAGES),
+            }),
+        )
+            .into_response();
+    }
+    let total_len: usize = messages.iter().map(|m| m.content.len()).sum();
+    if total_len > MAX_CONTENT_LEN {
+        CONCURRENCY.release();
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(ChatErrorBody {
+                error: format!(
+                    "Total message content too large ({} bytes, max {})",
+                    total_len, MAX_CONTENT_LEN
+                ),
             }),
         )
             .into_response();
@@ -226,7 +257,7 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     // ---- Step 7: Audit logging (flag-gated) ----
     if asi_lib::flags::flag("audit-logging") {
         let pool = asi_db::get_db();
-        let _ = asi_db::queries::audit::insert_audit_log(
+        if let Err(e) = asi_db::queries::audit::insert_audit_log(
             pool,
             &user_id,
             "chat_request",
@@ -235,7 +266,13 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
             effective_session_id.as_deref(),
             Some("unknown"),
         )
-        .await;
+        .await
+        {
+            asi_lib::logger::warn(
+                "Failed to write audit log",
+                &[("user_id", &user_id), ("error", &e.to_string())],
+            );
+        }
     }
 
     // ---- Step 8: Build provider ----
@@ -259,16 +296,13 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
         }
     };
 
-    // Pre-warm model connection
-    asi_lib::warmup::warmup().await;
-
     // ---- Step 9: Multi-agent routing ----
     let is_review =
         request_agent.as_deref() == Some("review") || last_msg.content.starts_with("/review");
 
     // ---- Step 10: Agent execution ----
     let messages_clone = messages.clone();
-    let rx = if is_review {
+    let result = if is_review {
         asi_lib::logger::info("Routing to review agent", &[("user_id", &user_id)]);
         let agent = build_review_agent(provider);
         agent.execute(messages_clone).await
@@ -278,13 +312,26 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
         agent.execute(messages_clone).await
     };
 
-    match rx {
-        Ok(receiver) => {
+    match result {
+        Ok((receiver, cancel_token)) => {
             // ---- Step 12: Release concurrency slot ----
             // The stream runs independently after this point.
             CONCURRENCY.release();
 
             // ---- Step 11: Convert AgentEvent stream -> SSE ----
+            // Wrap with a guard that cancels the agent loop on client disconnect.
+            struct CancelGuard {
+                token: asi_ai_sdk::agent::tool_loop::CancelToken,
+            }
+            impl Drop for CancelGuard {
+                fn drop(&mut self) {
+                    self.token.cancel();
+                }
+            }
+            let _guard = CancelGuard {
+                token: cancel_token,
+            };
+
             let stream = UnboundedReceiverStream::new(receiver).map(|event| {
                 let sse_event = match event {
                     AgentEvent::TextDelta { content } => {

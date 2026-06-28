@@ -5,6 +5,7 @@ use std::net::SocketAddr;
 async fn main() {
     asi_lib::logger::init_logger();
     let config = Config::from_env();
+    config.validate();
 
     let pool = asi_db::init_db(&config.database_url)
         .await

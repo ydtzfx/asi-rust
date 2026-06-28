@@ -36,11 +36,15 @@ impl ConcurrencyLimiter {
 
     /// Release a previously acquired slot.
     ///
-    /// # Panics
-    /// Panics if called when no slots are active (double-release).
+    /// Uses saturating subtraction to safely handle double-release without panicking.
+    /// Logs a warning when release is called with no active slots.
     pub fn release(&self) {
-        let prev = self.active.fetch_sub(1, Ordering::SeqCst);
-        assert!(prev > 0, "ConcurrencyLimiter: release without acquire");
+        let prev = self.active.load(Ordering::SeqCst);
+        if prev == 0 {
+            tracing::warn!("ConcurrencyLimiter: release called with no active slots (double-release?)");
+            return;
+        }
+        self.active.fetch_sub(1, Ordering::SeqCst);
     }
 
     /// Return the number of currently active slots.

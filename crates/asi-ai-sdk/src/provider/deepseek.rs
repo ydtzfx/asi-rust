@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use super::{AiProvider, ProviderError};
 use crate::types::*;
 use async_trait::async_trait;
@@ -15,11 +17,19 @@ pub struct DeepSeekProvider {
 
 impl DeepSeekProvider {
     pub fn new(api_key: String, model: String) -> Self {
+        Self::with_base_url(api_key, model, "https://api.deepseek.com/v1".to_string())
+    }
+
+    pub fn with_base_url(api_key: String, model: String, base_url: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(300))
+            .build()
+            .expect("Failed to build reqwest client");
         Self {
-            client: Client::new(),
+            client,
             api_key,
             model,
-            base_url: "https://api.deepseek.com/v1".to_string(),
+            base_url,
         }
     }
 }

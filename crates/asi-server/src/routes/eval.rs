@@ -90,7 +90,7 @@ async fn eval_handler(
 
     // ---- Run agent to completion ----
     let rx = match agent.execute(body.messages).await {
-        Ok(r) => r,
+        Ok((r, _cancel)) => r,
         Err(e) => {
             return Err((
                 StatusCode::INTERNAL_SERVER_ERROR,

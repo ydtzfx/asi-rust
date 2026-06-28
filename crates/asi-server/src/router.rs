@@ -1,32 +1,15 @@
 use axum::Router;
-use tower_http::cors::{Any, CorsLayer};
+use axum::middleware::from_fn;
+use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
 use crate::middleware::ResponseTimeLayer;
 use crate::routes;
 
+/// Build the production router with auth on protected routes.
 pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
-    let api_routes = Router::new()
-        .merge(routes::health::routes())
-        .merge(routes::flags::routes())
-        .merge(routes::sessions::routes())
-        .merge(routes::chat::routes())
-        .merge(routes::evolve::routes())
-        .merge(routes::model::routes())
-        .merge(routes::metrics::routes())
-        .merge(routes::stats::routes())
-        .merge(routes::version::routes())
-        .merge(routes::feedback::routes())
-        .merge(routes::search::routes())
-        .merge(routes::tools::routes())
-        .merge(routes::docs::routes())
-        .merge(routes::eval::routes())
-        .merge(routes::user::routes());
-
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    let api_routes = build_api_routes(true);
+    let cors = CorsLayer::permissive();
 
     Router::new()
         .nest("/api", api_routes)
@@ -34,4 +17,44 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
         .layer(ResponseTimeLayer)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
+}
+
+/// Build a router for integration tests (no auth middleware).
+#[doc(hidden)]
+pub fn build_test_router() -> Router {
+    let api_routes = build_api_routes(false);
+    Router::new().nest("/api", api_routes)
+}
+
+fn build_api_routes(require_auth: bool) -> Router {
+    // Public routes (no auth required).
+    let public_routes = Router::new()
+        .merge(routes::health::routes())
+        .merge(routes::version::routes());
+
+    // Protected routes.
+    let protected = Router::new()
+        .merge(routes::chat::routes())
+        .merge(routes::flags::routes())
+        .merge(routes::sessions::routes())
+        .merge(routes::evolve::routes())
+        .merge(routes::model::routes())
+        .merge(routes::metrics::routes())
+        .merge(routes::stats::routes())
+        .merge(routes::feedback::routes())
+        .merge(routes::search::routes())
+        .merge(routes::tools::routes())
+        .merge(routes::docs::routes())
+        .merge(routes::eval::routes())
+        .merge(routes::user::routes());
+
+    let protected_routes = if require_auth {
+        protected.layer(from_fn(asi_auth::middleware::require_auth))
+    } else {
+        protected
+    };
+
+    Router::new()
+        .merge(public_routes)
+        .merge(protected_routes)
 }

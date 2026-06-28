@@ -1,3 +1,7 @@
 /target/
 node_modules/
 package-lock.json
+.env
+*.db
+*.db-journal
+*.db-wal

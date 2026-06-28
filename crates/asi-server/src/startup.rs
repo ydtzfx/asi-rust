@@ -5,9 +5,6 @@ use std::time::Duration;
 /// Currently spawns:
 /// - An auto-evolve timer that triggers every 30 minutes.
 /// - A session-cleanup timer that triggers every 24 hours.
-///
-/// Both are stubs that log their invocation; real logic will be wired
-/// when the respective agent and session modules are connected.
 pub fn run_startup_hooks() {
     // Auto-evolve cycle: every 30 minutes
     tokio::spawn(async {
@@ -20,14 +17,28 @@ pub fn run_startup_hooks() {
         }
     });
 
-    // Session cleanup: every 24 hours
+    // Session cleanup: every 24 hours, deletes sessions older than 7 days.
     tokio::spawn(async {
         let mut interval = tokio::time::interval(Duration::from_secs(24 * 60 * 60));
         // The first tick fires immediately; skip it so we don't run at startup.
         interval.tick().await;
         loop {
             interval.tick().await;
-            asi_lib::logger::info("Session cleanup triggered", &[("component", "startup")]);
+            let pool = asi_db::get_db();
+            match asi_db::session_cleanup::clean_stale_sessions(pool, 7 * 24 * 3600).await {
+                Ok(count) => {
+                    asi_lib::logger::info(
+                        "Session cleanup completed",
+                        &[("component", "startup"), ("deleted", &count.to_string())],
+                    );
+                }
+                Err(e) => {
+                    asi_lib::logger::error(
+                        "Session cleanup failed",
+                        &[("component", "startup"), ("error", &e.to_string())],
+                    );
+                }
+            }
         }
     });
 }

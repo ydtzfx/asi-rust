@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::types::{AuthError, AuthenticatedUser};
 use jsonwebtoken::{Algorithm, DecodingKey, Validation, decode, decode_header};
 use serde::Deserialize;
@@ -38,7 +40,11 @@ async fn fetch_jwks() -> Result<Vec<JwkKey>, AuthError> {
         }
     }
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(10))
+        .connect_timeout(Duration::from_secs(5))
+        .build()
+        .map_err(|e| AuthError::JwksError(e.to_string()))?;
     let resp = client
         .get("https://api.clerk.com/v1/jwks")
         .send()

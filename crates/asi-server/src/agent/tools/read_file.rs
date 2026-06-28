@@ -8,7 +8,12 @@ use serde_json::Value;
 /// Uses `asi_lib::safe_path::resolve_safe_path()` for path containment:
 /// any path that resolves outside the project root is rejected with
 /// an execution error.
+///
+/// Files larger than `MAX_READ_BYTES` (1 MiB) are truncated to prevent OOM.
 pub struct ReadFileTool;
+
+/// Maximum file size that can be read (1 MiB).
+const MAX_READ_BYTES: usize = 1_048_576;
 
 #[async_trait]
 impl Tool for ReadFileTool {
@@ -17,7 +22,7 @@ impl Tool for ReadFileTool {
             def_type: "function".into(),
             function: FunctionDef {
                 name: "readFile".into(),
-                description: "Read the contents of a file from the local filesystem. ".into(),
+                description: "Read the contents of a file from the local filesystem. Files larger than 1 MB are truncated.".into(),
                 parameters: serde_json::json!({
                     "type": "object",
                     "properties": {
@@ -42,11 +47,34 @@ impl Tool for ReadFileTool {
             .await
             .map_err(ToolError::Execution)?;
 
-        let content = tokio::fs::read_to_string(&safe_path)
+        // Read with size limit — read at most MAX_READ_BYTES + 1 to detect truncation.
+        let mut buf = Vec::new();
+        use tokio::io::AsyncReadExt;
+        let file = tokio::fs::File::open(&safe_path)
+            .await
+            .map_err(|e| ToolError::Execution(format!("Failed to open file: {}", e)))?;
+        let total_read = file
+            .take((MAX_READ_BYTES + 1) as u64)
+            .read_to_end(&mut buf)
             .await
             .map_err(|e| ToolError::Execution(format!("Failed to read file: {}", e)))?;
 
-        Ok(content)
+        let truncated = total_read > MAX_READ_BYTES;
+        if truncated {
+            buf.truncate(MAX_READ_BYTES);
+        }
+
+        let content = String::from_utf8(buf)
+            .map_err(|e| ToolError::Execution(format!("File is not valid UTF-8: {}", e)))?;
+
+        if truncated {
+            Ok(format!(
+                "{}\n\n[File truncated at {} bytes ({} bytes total)]",
+                content, MAX_READ_BYTES, total_read
+            ))
+        } else {
+            Ok(content)
+        }
     }
 }
 
