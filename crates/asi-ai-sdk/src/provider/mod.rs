@@ -36,5 +36,6 @@ pub trait AiProvider: Send + Sync {
 }
 
 pub mod deepseek;
+pub mod fallback;
 pub mod model_registry;
 pub mod ollama;

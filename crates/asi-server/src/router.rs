@@ -3,7 +3,7 @@ use axum::middleware::from_fn;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
-use crate::middleware::ResponseTimeLayer;
+use crate::middleware::{GlobalRateLimitLayer, ResponseTimeLayer};
 use crate::routes;
 
 /// Build the production router with auth on protected routes.
@@ -14,13 +14,13 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
     Router::new()
         .nest("/api", api_routes)
         .fallback(leptos_axum::render_app_to_stream(asi_app::App))
+        .layer(GlobalRateLimitLayer)
         .layer(ResponseTimeLayer)
         .layer(TraceLayer::new_for_http())
         .layer(cors)
 }
 
 /// Build a router for integration tests (no auth middleware).
-#[doc(hidden)]
 pub fn build_test_router() -> Router {
     let api_routes = build_api_routes(false);
     Router::new().nest("/api", api_routes)

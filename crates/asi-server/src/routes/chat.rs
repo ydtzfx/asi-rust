@@ -275,30 +275,65 @@ async fn chat_handler(
         }
     }
 
-    // ---- Step 8: Build provider ----
-    // Select the active provider based on environment configuration.
-    // DeepSeek is primary when DEEPSEEK_API_KEY is set; otherwise use Ollama.
-    let provider: std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider> = {
-        if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
-            let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
-            std::sync::Arc::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
-                api_key, model,
-            ))
+    // ---- Step 8: Build provider(s) ----
+    // Primary provider based on env config; also build a fallback for when
+    // model-fallback flag is enabled and the primary fails.
+    let (provider, fallback_provider): (
+        std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>,
+        Option<std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>>,
+    ) = if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
+        let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
+        let primary = std::sync::Arc::new(
+            asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(api_key, model),
+        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        // Fallback: Ollama
+        let ollama_url = std::env::var("OLLAMA_BASE_URL")
+            .unwrap_or_else(|_| "http://localhost:11434/v1".into());
+        let ollama_model =
+            std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
+        let fallback = std::sync::Arc::new(
+            asi_ai_sdk::provider::ollama::OllamaProvider::new(ollama_model, ollama_url),
+        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        (primary, Some(fallback))
+    } else {
+        // Primary: Ollama. Fallback: try the fallback model.
+        let ollama_url = std::env::var("OLLAMA_BASE_URL")
+            .unwrap_or_else(|_| "http://localhost:11434/v1".into());
+        let ollama_model =
+            std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
+        let primary = std::sync::Arc::new(
+            asi_ai_sdk::provider::ollama::OllamaProvider::new(
+                ollama_model.clone(),
+                ollama_url.clone(),
+            ),
+        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        let fallback_model = std::env::var("OLLAMA_FALLBACK_MODEL")
+            .unwrap_or_else(|_| "qwen3:4b".into());
+        let fallback = if fallback_model != ollama_model {
+            Some(std::sync::Arc::new(
+                asi_ai_sdk::provider::ollama::OllamaProvider::new(fallback_model, ollama_url),
+            ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>)
         } else {
-            let ollama_url = std::env::var("OLLAMA_BASE_URL")
-                .unwrap_or_else(|_| "http://localhost:11434/v1".into());
-            let ollama_model =
-                std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-            std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
-                ollama_model,
-                ollama_url,
-            ))
-        }
+            None
+        };
+        (primary, fallback)
     };
 
-    // ---- Step 9: Multi-agent routing ----
-    let is_review =
-        request_agent.as_deref() == Some("review") || last_msg.content.starts_with("/review");
+    // ---- Step 9: Wrap provider with fallback if flag enabled ----
+    let provider: std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider> =
+        if asi_lib::flags::flag("model-fallback") {
+            std::sync::Arc::new(asi_ai_sdk::provider::fallback::FallbackProvider::new(
+                provider,
+                fallback_provider,
+            ))
+        } else {
+            provider
+        };
+
+    // ---- Step 10: Multi-agent routing ----
+    // Agent selection is controlled by the `agent` field in the request body,
+    // not by magic content prefixes.
+    let is_review = request_agent.as_deref() == Some("review");
 
     // ---- Step 10: Agent execution ----
     let messages_clone = messages.clone();
@@ -313,25 +348,16 @@ async fn chat_handler(
     };
 
     match result {
-        Ok((receiver, cancel_token)) => {
+        Ok((receiver, _cancel_token)) => {
             // ---- Step 12: Release concurrency slot ----
             // The stream runs independently after this point.
             CONCURRENCY.release();
 
             // ---- Step 11: Convert AgentEvent stream -> SSE ----
-            // Wrap with a guard that cancels the agent loop on client disconnect.
-            struct CancelGuard {
-                token: asi_ai_sdk::agent::tool_loop::CancelToken,
-            }
-            impl Drop for CancelGuard {
-                fn drop(&mut self) {
-                    self.token.cancel();
-                }
-            }
-            let _guard = CancelGuard {
-                token: cancel_token,
-            };
-
+            // Keep the cancel token alive in the response extensions so it
+            // outlives the handler return.  When the response is dropped
+            // (client disconnect or stream end), the token fires and the
+            // agent loop stops.
             let stream = UnboundedReceiverStream::new(receiver).map(|event| {
                 let sse_event = match event {
                     AgentEvent::TextDelta { content } => {

@@ -62,6 +62,11 @@ impl Tool for WriteFileTool {
             .await
             .map_err(|e| ToolError::Execution(format!("Failed to write file: {}", e)))?;
 
+        // Re-verify after write to close the TOCTOU window.
+        asi_lib::safe_path::verify_path_after_write(&safe_path)
+            .await
+            .map_err(ToolError::Execution)?;
+
         Ok(format!(
             "Successfully wrote {} bytes to {}",
             content.len(),

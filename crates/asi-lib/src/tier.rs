@@ -1,5 +1,7 @@
 /// Pricing tier for the ASI platform.
+/// Reserved for future enforcement — currently unused.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum Tier {
     Free,
     Pro,
@@ -7,7 +9,9 @@ pub enum Tier {
 }
 
 /// Resource limits associated with a tier.
+/// Reserved for future enforcement — currently unused.
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct TierLimits {
     pub max_sessions: u32,
     pub max_tokens_per_session: u32,
