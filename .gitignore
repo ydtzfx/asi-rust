@@ -8,3 +8,4 @@ package-lock.json
 *.db-shm
 .playwright-mcp/
 *.png
+snake.html

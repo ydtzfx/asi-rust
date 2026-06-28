@@ -4,7 +4,7 @@ use tower_http::cors::CorsLayer;
 use tower_http::services::ServeDir;
 use tower_http::trace::TraceLayer;
 
-use crate::middleware::{GlobalRateLimitLayer, ResponseTimeLayer};
+use crate::middleware::{GlobalRateLimitLayer, RequestIdLayer, ResponseTimeLayer};
 use crate::routes;
 
 pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
@@ -19,6 +19,7 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
         // The frontend is served as pre-built static HTML/CSS/JS.
         .fallback_service(ServeDir::new("static"))
         .layer(GlobalRateLimitLayer)
+        .layer(RequestIdLayer)
         .layer(ResponseTimeLayer)
         .layer(TraceLayer::new_for_http())
         .layer(cors)

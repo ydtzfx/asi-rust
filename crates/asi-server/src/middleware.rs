@@ -60,7 +60,70 @@ where
 }
 
 // ---------------------------------------------------------------------------
-// Rate-limit middleware (global, per-IP)
+// Request-ID middleware
+// ---------------------------------------------------------------------------
+
+use std::sync::atomic::{AtomicU64, Ordering};
+
+static REQUEST_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+/// A Tower layer that adds `x-request-id` and `x-response-time` headers.
+#[derive(Clone, Default)]
+pub struct RequestIdLayer;
+
+impl<S> Layer<S> for RequestIdLayer {
+    type Service = RequestIdService<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        RequestIdService { inner }
+    }
+}
+
+#[derive(Clone)]
+pub struct RequestIdService<S> {
+    inner: S,
+}
+
+impl<S, ReqBody> Service<Request<ReqBody>> for RequestIdService<S>
+where
+    S: Service<Request<ReqBody>, Response = Response> + Clone + Send + 'static,
+    S::Future: Send + 'static,
+{
+    type Response = Response;
+    type Error = S::Error;
+    type Future = std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<Self::Response, Self::Error>> + Send>,
+    >;
+
+    fn poll_ready(
+        &mut self,
+        cx: &mut std::task::Context<'_>,
+    ) -> std::task::Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
+        let req_id = REQUEST_COUNTER.fetch_add(1, Ordering::Relaxed);
+        let start = Instant::now();
+        let future = self.inner.call(req);
+        Box::pin(async move {
+            let mut response: Response = future.await?;
+            let elapsed_ms = start.elapsed().as_millis();
+            response.headers_mut().insert(
+                "x-request-id",
+                axum::http::HeaderValue::from_str(&format!("req_{}", req_id)).unwrap(),
+            );
+            response.headers_mut().insert(
+                "x-response-time-ms",
+                axum::http::HeaderValue::from_str(&elapsed_ms.to_string()).unwrap(),
+            );
+            Ok(response)
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Rate-limit middleware (global, per-endpoint)
 // ---------------------------------------------------------------------------
 
 use std::collections::HashMap;
