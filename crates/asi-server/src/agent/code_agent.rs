@@ -11,6 +11,16 @@ use super::tools::read_file::ReadFileTool;
 use super::tools::run_command::RunCommandTool;
 use super::tools::write_file::WriteFileTool;
 
+/// Build a ToolMap with the four standard agent tools.
+pub fn build_agent_tools() -> ToolMap {
+    let mut tools: ToolMap = std::collections::HashMap::new();
+    tools.insert("readFile".into(), Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>);
+    tools.insert("writeFile".into(), Arc::new(WriteFileTool));
+    tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
+    tools.insert("runCommand".into(), Arc::new(RunCommandTool));
+    tools
+}
+
 /// Build a `ToolLoopAgent` configured as the primary coding agent.
 ///
 /// The agent is equipped with four tools:
@@ -23,15 +33,7 @@ use super::tools::write_file::WriteFileTool;
 /// - Normal: full instructions, 20 max steps
 /// - Read-only: compact instructions, 5 max steps
 pub fn build_code_agent(provider: Arc<dyn AiProvider>) -> ToolLoopAgent {
-    let mut tools: ToolMap = std::collections::HashMap::new();
-
-    tools.insert(
-        "readFile".into(),
-        Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>,
-    );
-    tools.insert("writeFile".into(), Arc::new(WriteFileTool));
-    tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
-    tools.insert("runCommand".into(), Arc::new(RunCommandTool));
+    let tools = build_agent_tools();
 
     let instructions = if is_compact_mode() {
         AGENT_INSTRUCTIONS_COMPACT.to_string()

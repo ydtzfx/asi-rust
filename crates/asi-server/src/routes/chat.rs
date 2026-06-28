@@ -17,7 +17,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use asi_ai_sdk::agent::tool_loop::AgentEvent;
 use asi_ai_sdk::types::Message;
 
-use crate::agent::code_agent::build_code_agent;
+use crate::agent::code_agent::{build_agent_tools, build_code_agent};
 use crate::agent::review_agent::build_review_agent;
 use crate::error::ProblemDetails;
 
@@ -288,10 +288,18 @@ async fn chat_handler(
 
     // ---- Step 10: Multi-agent routing ----
     let is_review = request_agent.as_deref() == Some("review");
+    let is_deep = request_agent.as_deref() == Some("deep");
     let use_multi_agent = asi_lib::flags::flag("multi-agent");
 
     let messages_clone = messages.clone();
-    let result = if use_multi_agent {
+    let result = if is_deep {
+        asi_lib::logger::info("Routing to deep agent", &[("user_id", &user_id)]);
+        let tools = build_agent_tools();
+        let deep_agent = asi_ai_sdk::agent::deep_agent::DeepAgent::new(
+            provider, tools, 5,
+        );
+        deep_agent.execute(&messages_clone.last().map(|m| m.content.as_str()).unwrap_or("")).await
+    } else if use_multi_agent {
         asi_lib::logger::info("Routing to multi-agent coordinator", &[("user_id", &user_id)]);
         let code_agent = std::sync::Arc::new(build_code_agent(provider.clone()));
         let review_agent = std::sync::Arc::new(build_review_agent(provider.clone()));
