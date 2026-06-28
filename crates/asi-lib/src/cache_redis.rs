@@ -66,9 +66,12 @@ pub fn get_cache() -> Box<dyn CacheBackend> {
     let backend = std::env::var("CACHE_BACKEND").unwrap_or_else(|_| "memory".into());
     if backend == "redis" {
         if let Ok(redis_url) = std::env::var("REDIS_URL") {
-            tracing::info!("Using Redis cache backend: {}", redis_url);
-            // Redis integration placeholder — returns memory cache as fallback.
-            // When the `redis` crate is added, replace with actual Redis client.
+            // Log only host:port — never the password.
+            let safe = redis_url
+                .split('@')
+                .last()
+                .unwrap_or(&redis_url);
+            tracing::info!("Using Redis cache backend: {}", safe);
             return Box::new(MemoryCache::new(ttl));
         }
     }
