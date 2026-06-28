@@ -1,3 +1,19 @@
+//! # ASI Lib
+//!
+//! Core utilities and infrastructure shared across all ASI crates.
+//! 16 modules covering configuration, security, caching, concurrency, and more.
+//!
+//! ## Module Stability
+//!
+//! | Module | Status |
+//! |--------|--------|
+//! | config, flags, logger, errors | **Stable** |
+//! | safe_path, prompt_guard, cache | **Stable** |
+//! | circuit_breaker, concurrency, rate_limit, retry | **Stable** |
+//! | telemetry, emitter, tier | **Evolving** |
+//! | utils, warmup | **Internal** |
+//! | cache_redis | **Experimental** (feature-gated) |
+
 pub mod cache;
 pub mod cache_redis;
 pub mod circuit_breaker;
