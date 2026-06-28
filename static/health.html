@@ -44,7 +44,7 @@ async function refresh(){
     document.getElementById('ver').textContent='v'+v.version+' ('+v.rustc.split(' ')[0]+')';
   }catch(e){}
   try{
-    const m=await (await fetch('/api/metrics')).text();
+    const m=await (await fetch('/api/metrics',{headers:{'X-User-ID':'dashboard'}})).text();
     const sm=m.match(/asi_sessions_total (\d+)/);
     const tm=m.match(/asi_tokens_used_total (\d+)/);
     if(sm)document.getElementById('sessions').textContent=sm[1];
