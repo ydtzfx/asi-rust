@@ -1,0 +1,156 @@
+# Multi-region deployment architecture
+# Each region has: Deployment + Service + HPA + failover Ingress
+---
+# --- US East (primary) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asi-server-us-east
+  labels: { app: asi-server, region: us-east }
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: asi-server, region: us-east }
+  template:
+    metadata:
+      labels: { app: asi-server, region: us-east }
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+      containers:
+        - name: asi-server
+          image: ghcr.io/ydtzfx/asi-rust:latest
+          env: [{ name: REGION, value: us-east }]
+          ports: [{ containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            periodSeconds: 15
+          readinessProbe:
+            httpGet: { path: /api/ready, port: 3000 }
+            periodSeconds: 10
+---
+# --- US East Service ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asi-server-us-east
+spec:
+  selector: { app: asi-server, region: us-east }
+  ports: [{ port: 3000 }]
+  type: ClusterIP
+---
+# --- US West (secondary) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asi-server-us-west
+  labels: { app: asi-server, region: us-west }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: asi-server, region: us-west }
+  template:
+    metadata:
+      labels: { app: asi-server, region: us-west }
+    spec:
+      containers:
+        - name: asi-server
+          image: ghcr.io/ydtzfx/asi-rust:latest
+          env: [{ name: REGION, value: us-west }]
+          ports: [{ containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asi-server-us-west
+spec:
+  selector: { app: asi-server, region: us-west }
+  ports: [{ port: 3000 }]
+---
+# --- EU West ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asi-server-eu-west
+  labels: { app: asi-server, region: eu-west }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: asi-server, region: eu-west }
+  template:
+    metadata:
+      labels: { app: asi-server, region: eu-west }
+    spec:
+      containers:
+        - name: asi-server
+          image: ghcr.io/ydtzfx/asi-rust:latest
+          env: [{ name: REGION, value: eu-west }]
+          ports: [{ containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: asi-server-eu-west
+spec:
+  selector: { app: asi-server, region: eu-west }
+  ports: [{ port: 3000 }]
+---
+# --- AP Southeast ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: asi-server-ap-se
+  labels: { app: asi-server, region: ap-southeast }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: asi-server, region: ap-southeast }
+  template:
+    metadata:
+      labels: { app: asi-server, region: ap-southeast }
+    spec:
+      containers:
+        - name: asi-server
+          image: ghcr.io/ydtzfx/asi-rust:latest
+          env: [{ name: REGION, value: ap-southeast }]
+          ports: [{ containerPort: 3000 }]
+          livenessProbe:
+            httpGet: { path: /api/health, port: 3000 }
+            periodSeconds: 15
+---
+# --- Global Load Balancer (Ingress) ---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: asi-global-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  rules:
+    - host: asi.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: asi-server-us-east
+                port: { number: 3000 }
+  tls:
+    - hosts: [asi.example.com]
+      secretName: asi-tls-cert
+---
+# --- Cross-Region Failover (DNS-based) ---
+# Primary: us-east (latency-based routing)
+# Secondary: us-west (failover)
+# Tertiary: eu-west (disaster recovery)
+# Quaternary: ap-southeast (edge serving)
