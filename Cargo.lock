@@ -113,6 +113,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-compliance"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-cortex"
 version = "0.1.0"
 dependencies = [
