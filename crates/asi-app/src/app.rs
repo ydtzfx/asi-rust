@@ -13,15 +13,14 @@ pub fn App() -> impl IntoView {
     provide_meta_context();
 
     view! {
-        // <Html/> and <Body/> provide the HTML skeleton that leptos_meta
-        // needs to inject <head> content.  Without these, SSR panics with
-        // "you are using leptos_meta without a </head> tag".
+        // <Html/> emits <html><head> — meta tags go here.
         <Html />
         <Title text="ASI — AI Coding Assistant"/>
         <Meta charset="UTF-8"/>
         <Meta name="viewport" content="width=device-width, initial-scale=1.0"/>
         <Meta name="description" content="ASI — AI-powered multi-agent coding assistant platform with autonomous code generation, review, and self-evolution."/>
 
+        // <Body/> emits </head><body> — page content goes after it.
         <Body />
 
         <Router>
