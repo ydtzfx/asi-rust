@@ -69,7 +69,7 @@
         }
 
         function addTool(name, args) {
-            return addMsg('tool', `<span class="name">🔧 ${name}</span> ${escapeHtml(args)}`);
+            return addMsg('tool', `<span class="name">🔧 ${escapeHtml(name)}</span> ${escapeHtml(args)}`);
         }
 
         function escapeHtml(s) {
