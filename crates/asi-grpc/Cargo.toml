@@ -1,0 +1,11 @@
+[package]
+name = "asi-grpc"
+edition.workspace = true
+version.workspace = true
+[dependencies]
+tokio.workspace = true
+tonic = "0.12"
+prost = "0.13"
+tracing.workspace = true
+[build-dependencies]
+tonic-build = "0.12"

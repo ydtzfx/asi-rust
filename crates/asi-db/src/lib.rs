@@ -1,3 +1,4 @@
+pub mod postgres;
 pub mod queries;
 pub mod schema;
 pub mod session_cleanup;
