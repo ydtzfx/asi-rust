@@ -33,7 +33,8 @@ pub fn build_test_router() -> Router {
 fn build_api_routes(require_auth: bool) -> Router {
     let public_routes = Router::new()
         .merge(routes::health::routes())
-        .merge(routes::version::routes());
+        .merge(routes::version::routes())
+        .merge(routes::docs::routes());
 
     let protected = Router::new()
         .merge(routes::chat::routes())
@@ -46,7 +47,6 @@ fn build_api_routes(require_auth: bool) -> Router {
         .merge(routes::feedback::routes())
         .merge(routes::search::routes())
         .merge(routes::tools::routes())
-        .merge(routes::docs::routes())
         .merge(routes::eval::routes())
         .merge(routes::user::routes());
 
