@@ -1,5 +1,8 @@
 use axum::Router;
+use axum::body::Body;
+use axum::http::StatusCode;
 use axum::middleware::from_fn;
+use axum::response::Response;
 use tower_http::cors::CorsLayer;
 use tower_http::trace::TraceLayer;
 
@@ -13,7 +16,7 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
 
     Router::new()
         .nest("/api", api_routes)
-        .fallback(leptos_axum::render_app_to_stream(asi_app::App))
+        .fallback(fallback_handler)
         .layer(GlobalRateLimitLayer)
         .layer(ResponseTimeLayer)
         .layer(TraceLayer::new_for_http())
@@ -24,6 +27,15 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
 pub fn build_test_router() -> Router {
     let api_routes = build_api_routes(false);
     Router::new().nest("/api", api_routes)
+}
+
+/// Safe fallback handler — avoids leptos SSR panics that would kill tokio workers.
+async fn fallback_handler() -> Response {
+    Response::builder()
+        .status(StatusCode::NOT_FOUND)
+        .header("content-type", "text/plain")
+        .body(Body::from("Not Found"))
+        .unwrap()
 }
 
 fn build_api_routes(require_auth: bool) -> Router {
