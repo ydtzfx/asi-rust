@@ -148,7 +148,8 @@ async fn test_chat_empty_messages_returns_400() {
         .await
         .unwrap();
     let json: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(json["error"], "No messages provided");
+    assert_eq!(json["title"], "No messages provided");
+    assert_eq!(json["status_code"], 400);
 }
 
 #[tokio::test]
@@ -174,7 +175,8 @@ async fn test_chat_last_message_not_user_returns_400() {
         .await
         .unwrap();
     let json: Value = serde_json::from_slice(&body).unwrap();
-    assert_eq!(json["error"], "Last message must have role 'user'");
+    assert_eq!(json["title"], "Last message must have role 'user'");
+    assert_eq!(json["status_code"], 400);
 }
 
 #[tokio::test]

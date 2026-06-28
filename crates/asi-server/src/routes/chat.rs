@@ -3,7 +3,6 @@ use std::time::Duration;
 
 use axum::{
     Extension, Json, Router,
-    http::StatusCode,
     response::{
         IntoResponse, Response,
         sse::{Event as SseEvent, KeepAlive, Sse},
@@ -11,7 +10,7 @@ use axum::{
     routing::post,
 };
 use std::sync::Arc;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tokio_stream::StreamExt as _;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
@@ -20,6 +19,7 @@ use asi_ai_sdk::types::Message;
 
 use crate::agent::code_agent::build_code_agent;
 use crate::agent::review_agent::build_review_agent;
+use crate::error::ProblemDetails;
 
 // ---------------------------------------------------------------------------
 // Global shared state
@@ -48,11 +48,6 @@ pub struct ChatRequestBody {
     pub agent: Option<String>,
     #[serde(default)]
     pub session_id: Option<String>,
-}
-
-#[derive(Debug, Serialize)]
-pub struct ChatErrorBody {
-    pub error: String,
 }
 
 // ---------------------------------------------------------------------------
@@ -97,37 +92,21 @@ async fn chat_handler(
 
     match RATE_LIMITER.check(rate_limit_key, RATE_LIMIT_MAX, RATE_LIMIT_WINDOW_MS) {
         asi_lib::rate_limit::RateLimitResult::RetryAfter(ms) => {
-            return (
-                StatusCode::TOO_MANY_REQUESTS,
-                Json(ChatErrorBody {
-                    error: format!("Rate limit exceeded. Retry after {}ms", ms),
-                }),
-            )
-                .into_response();
+            return ProblemDetails::too_many_requests((ms / 1000) as u64).into_response();
         }
         asi_lib::rate_limit::RateLimitResult::Denied => {
-            return (
-                StatusCode::TOO_MANY_REQUESTS,
-                Json(ChatErrorBody {
-                    error: "Rate limit exceeded".to_string(),
-                }),
-            )
-                .into_response();
+            return ProblemDetails::too_many_requests(60).into_response();
         }
         asi_lib::rate_limit::RateLimitResult::Ok => {}
     }
 
     // ---- Step 2: Concurrency slot ----
     if !CONCURRENCY.acquire() {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Json(ChatErrorBody {
-                error: "Server busy. Too many concurrent requests. Try again later.".to_string(),
-            }),
+        return ProblemDetails::service_unavailable(
+            "Server busy. Too many concurrent requests.",
         )
-            .into_response();
+        .into_response();
     }
-    // Slot is released in Step 12 after the stream is set up.
 
     // ---- Step 3: User already extracted in Step 1 ----
 
@@ -141,53 +120,34 @@ async fn chat_handler(
     // Validate input
     if messages.is_empty() {
         CONCURRENCY.release();
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ChatErrorBody {
-                error: "No messages provided".to_string(),
-            }),
-        )
-            .into_response();
+        return ProblemDetails::bad_request("No messages provided").into_response();
     }
 
     // Enforce message count and total content length limits.
     const MAX_MESSAGES: usize = 50;
-    const MAX_CONTENT_LEN: usize = 100_000; // 100 KB total
+    const MAX_CONTENT_LEN: usize = 100_000;
     if messages.len() > MAX_MESSAGES {
         CONCURRENCY.release();
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ChatErrorBody {
-                error: format!("Too many messages (max {})", MAX_MESSAGES),
-            }),
-        )
+        return ProblemDetails::bad_request("Too many messages")
+            .with_detail(format!("Maximum {} messages allowed", MAX_MESSAGES))
             .into_response();
     }
     let total_len: usize = messages.iter().map(|m| m.content.len()).sum();
     if total_len > MAX_CONTENT_LEN {
         CONCURRENCY.release();
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ChatErrorBody {
-                error: format!(
-                    "Total message content too large ({} bytes, max {})",
-                    total_len, MAX_CONTENT_LEN
-                ),
-            }),
-        )
+        return ProblemDetails::bad_request("Total message content too large")
+            .with_detail(format!(
+                "{} bytes exceeds {} byte limit",
+                total_len, MAX_CONTENT_LEN
+            ))
             .into_response();
     }
 
-    // Ensure last message is a user message (basic contract check)
+    // Ensure last message is a user message
     let last_msg = messages.last().unwrap();
     if last_msg.role != asi_ai_sdk::types::Role::User {
         CONCURRENCY.release();
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(ChatErrorBody {
-                error: "Last message must have role 'user'".to_string(),
-            }),
-        )
+        return ProblemDetails::bad_request("Last message must have role 'user'")
             .into_response();
     }
 
@@ -200,12 +160,8 @@ async fn chat_handler(
                 "Prompt injection detected",
                 &[("user_id", &user_id), ("attacks", &attacks.join(","))],
             );
-            return (
-                StatusCode::FORBIDDEN,
-                Json(ChatErrorBody {
-                    error: format!("Prompt injection detected: {}", attacks.join(", ")),
-                }),
-            )
+            return ProblemDetails::forbidden("Prompt injection detected")
+                .with_detail(format!("Attack types: {}", attacks.join(", ")))
                 .into_response();
         }
     }
@@ -406,12 +362,7 @@ async fn chat_handler(
         Err(e) => {
             CONCURRENCY.release();
             asi_lib::logger::error("Agent execution failed", &[("error", &e)]);
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ChatErrorBody {
-                    error: format!("Agent execution failed: {}", e),
-                }),
-            )
+            ProblemDetails::internal_error(&format!("Agent execution failed: {}", e))
                 .into_response()
         }
     }
