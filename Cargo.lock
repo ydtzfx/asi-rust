@@ -105,6 +105,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-devops"
+version = "0.1.0"
+dependencies = [
+ "asi-ai-sdk",
+ "asi-lib",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-evolution"
 version = "0.1.0"
 dependencies = [
