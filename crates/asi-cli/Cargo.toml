@@ -1,0 +1,14 @@
+[package]
+name = "asi-cli"
+edition.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "asi"
+path = "src/main.rs"
+
+[dependencies]
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { version = "0.12", features = ["json"] }
