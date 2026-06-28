@@ -2,6 +2,22 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Collaboration Protocol
+
+Follow the ["计算文明塑造者" protocol](memory://collaboration-protocol):
+
+1. **Core judgment first** — direct conclusion before explanation
+2. **Current optimal solution** — executable plan
+3. **System decomposition** — architecture/modules/data flow
+4. **Code/architecture/process** — complete deliverables
+5. **Risks & boundaries** — explicitly stated
+6. **Depositable assets** — reusable rules/templates/norms
+7. **Next actions** — specific, actionable
+
+Default priorities: solve current problem > systematize > long-term evolution.
+For financial/security/automation tasks, always include risk controls, rollback, audit.
+Actively question assumptions and propose better alternatives.
+
 ## Build & Test
 
 ```bash
@@ -30,17 +46,31 @@ cargo build --release && ./target/release/asi-server
 
 ## Architecture
 
-ASI-Rust is a Cargo workspace with six crates serving a single binary (`asi-server`). Every crate is a library; `asi-server/src/main.rs` is the only binary entrypoint.
+ASI-Rust is a Cargo workspace with **20 crates**, two binaries (`asi-server`, `asi-cli`). See `docs/ULTIMATE_REPORT.md` for the full enterprise architecture.
 
 ### Crate dependency graph
 
 ```
-asi-server (binary + routes + agent tools)
-  ├── asi-app      (Leptos SSR frontend — currently replaced by static/index.html)
-  ├── asi-ai-sdk   (AI provider trait, ToolLoopAgent, streaming)
-  ├── asi-auth     (Clerk JWT verification middleware)
-  ├── asi-db       (SQLite via sqlx, migrations, sessions)
-  └── asi-lib      (Config, flags, safe_path, rate_limit, concurrency, telemetry, prompt_guard, etc.)
+asi-server (HTTP + routes + chat + enterprise integration)
+  ├── asi-cortex      (unified brain: monitor/analyze/predict/decide/optimize)
+  ├── asi-defense     (6-layer defense, threat detection, adaptive firewall)
+  ├── asi-evolution   (prompt evo, knowledge, model picker, A/B test)
+  ├── asi-automation  (watchdog, self-heal, auto-backup, recovery)
+  ├── asi-devops      (PR review, auto-fix, merge gate, deploy verify)
+  ├── asi-ai-sdk      (AI providers, ToolLoopAgent, AGI coordinator/planner/memory/reasoning/reflector)
+  ├── asi-app         (Leptos SSR frontend — currently replaced by static/index.html)
+  ├── asi-auth        (Clerk JWT verification middleware)
+  ├── asi-db          (SQLite via sqlx, migrations, sessions)
+  └── asi-lib         (15 modules: config, flags, cache, circuit_breaker, safe_path, prompt_guard...)
+
+asi-cli               (enterprise CLI: status/deploy/monitor/backup/logs)
+asi-loop              (closed-loop autonomous controller)
+asi-mesh              (federated cognitive network)
+asi-twin              (digital twin sandbox)
+asi-business          (autonomous business: billing/capacity/SLA)
+asi-events            (event-driven architecture: pub/sub bus, event store)
+asi-compliance        (SOC2/ISO 27001 evidence collection + audit)
+asi-analytics         (data lake, trend engine, BI insights)
 ```
 
 ### Request flow (chat)
