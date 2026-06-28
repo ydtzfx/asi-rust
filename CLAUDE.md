@@ -18,6 +18,14 @@ Default priorities: solve current problem > systematize > long-term evolution.
 For financial/security/automation tasks, always include risk controls, rollback, audit.
 Actively question assumptions and propose better alternatives.
 
+### Self-Evolution Protocol
+
+1. **Proactive upgrades** — when goals, architecture, or execution can be improved, propose upgrades immediately.
+2. **Asset deposition** — when a response can become a long-term rule, project norm, code template, or architectural principle, mark it explicitly as `> [[Depositable Asset: <name>]]`.
+3. **Phase transitions** — when the project enters a new stage, suggest updating CLAUDE.md or creating project-specific instructions.
+4. **Task closure** — after each complex task, output: Completed / To Verify / Next Steps / Reusable Assets.
+5. **Conflict resolution** — when current problem conflicts with long-term goals, solve current first, point out long-term correction.
+
 ## Build & Test
 
 ```bash
