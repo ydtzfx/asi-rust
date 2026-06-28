@@ -19,7 +19,7 @@ const REVIEW_MAX_STEPS: usize = 15;
 ///
 /// Uses the compact instruction set and runs for a maximum of 15 steps.
 /// This agent cannot modify files or execute commands.
-pub fn build_review_agent(provider: Box<dyn AiProvider>) -> ToolLoopAgent {
+pub fn build_review_agent(provider: Arc<dyn AiProvider>) -> ToolLoopAgent {
     let mut tools: ToolMap = std::collections::HashMap::new();
 
     tools.insert(
@@ -74,8 +74,8 @@ mod tests {
 
     #[test]
     fn test_build_review_agent() {
-        let provider = Box::new(TestProvider);
-        let agent = build_review_agent(provider as Box<dyn AiProvider>);
+        let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
+        let agent = build_review_agent(provider);
         assert_eq!(agent.max_steps(), 15);
     }
 }

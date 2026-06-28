@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use super::AiProvider;
 use crate::provider::deepseek::DeepSeekProvider;
 use crate::provider::ollama::OllamaProvider;
@@ -12,12 +14,12 @@ pub struct ModelInfo {
 }
 
 pub struct ModelRegistry {
-    providers: Vec<Box<dyn AiProvider>>,
+    providers: Vec<Arc<dyn AiProvider>>,
     active_index: usize,
 }
 
 impl ModelRegistry {
-    pub fn new(providers: Vec<Box<dyn AiProvider>>) -> Self {
+    pub fn new(providers: Vec<Arc<dyn AiProvider>>) -> Self {
         Self {
             providers,
             active_index: 0,
@@ -52,19 +54,19 @@ impl ModelRegistry {
 
 /// Build the default registry from environment config.
 pub fn build_default_registry() -> ModelRegistry {
-    let mut providers: Vec<Box<dyn AiProvider>> = Vec::new();
+    let mut providers: Vec<Arc<dyn AiProvider>> = Vec::new();
 
     // DeepSeek is primary
     if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
         let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
-        providers.push(Box::new(DeepSeekProvider::new(api_key, model)));
+        providers.push(Arc::new(DeepSeekProvider::new(api_key, model)));
     }
 
     // Ollama is fallback
     let ollama_url =
         std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".into());
     let ollama_model = std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-    providers.push(Box::new(OllamaProvider::new(ollama_model, ollama_url)));
+    providers.push(Arc::new(OllamaProvider::new(ollama_model, ollama_url)));
 
     ModelRegistry::new(providers)
 }

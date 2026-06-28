@@ -22,7 +22,7 @@ use super::tools::write_file::WriteFileTool;
 /// The instruction set and step budget depend on the `read-only-mode` flag:
 /// - Normal: full instructions, 20 max steps
 /// - Read-only: compact instructions, 5 max steps
-pub fn build_code_agent(provider: Box<dyn AiProvider>) -> ToolLoopAgent {
+pub fn build_code_agent(provider: Arc<dyn AiProvider>) -> ToolLoopAgent {
     let mut tools: ToolMap = std::collections::HashMap::new();
 
     tools.insert(
@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn test_build_code_agent_default() {
         asi_lib::flags::reset_flag("read-only-mode");
-        let provider = Box::new(TestProvider);
-        let agent = build_code_agent(provider as Box<dyn AiProvider>);
+        let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
+        let agent = build_code_agent(provider);
         assert!(
             agent.max_steps() > 0,
             "Agent should have a positive step count"
@@ -96,8 +96,8 @@ mod tests {
     fn test_build_code_agent_read_only() {
         asi_lib::flags::reset_flag("read-only-mode");
         asi_lib::flags::set_flag("read-only-mode");
-        let provider = Box::new(TestProvider);
-        let agent = build_code_agent(provider as Box<dyn AiProvider>);
+        let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
+        let agent = build_code_agent(provider);
         assert!(
             agent.max_steps() == 5 || agent.max_steps() == 20,
             "Agent step count should be 5 (read-only) or 20 (normal), got {}",

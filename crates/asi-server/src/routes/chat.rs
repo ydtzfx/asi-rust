@@ -241,10 +241,10 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
     // ---- Step 8: Build provider ----
     // Select the active provider based on environment configuration.
     // DeepSeek is primary when DEEPSEEK_API_KEY is set; otherwise use Ollama.
-    let provider: Box<dyn asi_ai_sdk::provider::AiProvider> = {
+    let provider: std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider> = {
         if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
             let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
-            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
+            std::sync::Arc::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
                 api_key, model,
             ))
         } else {
@@ -252,7 +252,7 @@ async fn chat_handler(body: Json<ChatRequestBody>) -> Response {
                 .unwrap_or_else(|_| "http://localhost:11434/v1".into());
             let ollama_model =
                 std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+            std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
                 ollama_model,
                 ollama_url,
             ))

@@ -4,6 +4,7 @@ use async_trait::async_trait;
 use futures_core::Stream;
 use reqwest::Client;
 use std::pin::Pin;
+use std::time::Duration;
 use tokio_stream::StreamExt;
 
 pub struct OllamaProvider {
@@ -14,8 +15,12 @@ pub struct OllamaProvider {
 
 impl OllamaProvider {
     pub fn new(model: String, base_url: String) -> Self {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(300))
+            .build()
+            .expect("Failed to build reqwest client");
         Self {
-            client: Client::new(),
+            client,
             model,
             base_url,
         }

@@ -60,14 +60,14 @@ async fn eval_handler(
     }
 
     // ---- Build provider ----
-    let provider: Box<dyn asi_ai_sdk::provider::AiProvider> = {
+    let provider: std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider> = {
         if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
             let model = body
                 .model
                 .clone()
                 .or_else(|| std::env::var("DEEPSEEK_MODEL").ok())
                 .unwrap_or_else(|| "deepseek-chat".into());
-            Box::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
+            std::sync::Arc::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
                 api_key, model,
             ))
         } else {
@@ -78,7 +78,7 @@ async fn eval_handler(
                 .clone()
                 .or_else(|| std::env::var("OLLAMA_MODEL").ok())
                 .unwrap_or_else(|| "gemma4:31b-cloud".into());
-            Box::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+            std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
                 ollama_model,
                 ollama_url,
             ))
