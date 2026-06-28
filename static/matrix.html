@@ -42,6 +42,7 @@ canvas{max-width:100%;margin-top:.5rem}
 const CRATES=['asi-server','asi-ai-sdk','asi-evolution','asi-automation','asi-auth','asi-db','asi-lib','asi-app','asi-migrations','asi-scripts'];
 const REGIONS=['us-east','us-west','eu-west','ap-southeast'];
 const CAPABILITIES=['CI/CD','Observability','Security','Resilience','Performance','API Standards','Deploy Ops','Database','Testing','AGI','Evolution','Automation'];
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
 
 async function load(){
   try{
@@ -49,7 +50,7 @@ async function load(){
     const v=await(await fetch('/api/version')).json();
 
     document.getElementById('statusBar').innerHTML=
-      `<div class="stat"><div class="val ok">●</div><div class="lbl">Server ${v.version}</div></div>
+      `<div class="stat"><div class="val ok">●</div><div class="lbl">Server ${esc(v.version)}</div></div>
        <div class="stat"><div class="val ${r.database?'ok':'err'}">${r.database?'Healthy':'Down'}</div><div class="lbl">Database</div></div>
        <div class="stat"><div class="val ${r.ai_provider?'ok':'warn'}">${r.ai_provider?'Online':'Degraded'}</div><div class="lbl">AI Provider</div></div>
        <div class="stat"><div class="val info">${CRATES.length}</div><div class="lbl">Crates</div></div>
@@ -71,7 +72,7 @@ async function load(){
   try{
     const m=await(await fetch('/api/model',{headers:{'X-User-ID':'matrix'}})).json();
     document.getElementById('models').innerHTML=m.map(x=>
-      `<div class="row"><span class="dot ok"></span>${x.name}<span class="badge ok">${x.provider}</span></div>`).join('');
+      `<div class="row"><span class="dot ok"></span>${esc(x.name)}<span class="badge ok">${esc(x.provider)}</span></div>`).join('');
   }catch(e){
     document.getElementById('models').innerHTML='<div class="row"><span class="dot ok"></span>gemma4:31b-cloud<span class="badge ok">ollama</span></div>';
   }
