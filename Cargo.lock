@@ -161,6 +161,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-events"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-evolution"
 version = "0.1.0"
 dependencies = [
