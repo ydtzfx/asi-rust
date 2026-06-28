@@ -287,13 +287,23 @@ async fn chat_handler(
         };
 
     // ---- Step 10: Multi-agent routing ----
-    // Agent selection is controlled by the `agent` field in the request body,
-    // not by magic content prefixes.
     let is_review = request_agent.as_deref() == Some("review");
+    let use_multi_agent = asi_lib::flags::flag("multi-agent");
 
-    // ---- Step 10: Agent execution ----
     let messages_clone = messages.clone();
-    let result = if is_review {
+    let result = if use_multi_agent {
+        asi_lib::logger::info("Routing to multi-agent coordinator", &[("user_id", &user_id)]);
+        let code_agent = std::sync::Arc::new(build_code_agent(provider.clone()));
+        let review_agent = std::sync::Arc::new(build_review_agent(provider.clone()));
+        let memory = std::sync::Arc::new(asi_ai_sdk::agent::memory::AgentMemory::new(
+            std::time::Duration::from_secs(3600),
+            100,
+        ));
+        let coordinator = asi_ai_sdk::agent::coordinator::Coordinator::new(
+            code_agent, review_agent, memory,
+        );
+        coordinator.execute(messages_clone).await
+    } else if is_review {
         asi_lib::logger::info("Routing to review agent", &[("user_id", &user_id)]);
         let agent = build_review_agent(provider);
         agent.execute(messages_clone).await
