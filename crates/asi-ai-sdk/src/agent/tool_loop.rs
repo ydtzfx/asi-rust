@@ -181,7 +181,7 @@ async fn run_agent_loop(
             messages: conversation.clone(),
             tools: tools_for_request.clone(),
             temperature: None,
-            max_tokens: None,
+            max_tokens: Some(4096), // cap response length to prevent runaway
             stream: Some(false),
         };
 

@@ -1,3 +1,4 @@
+use rand::Rng;
 use uuid::Uuid;
 
 pub fn new_uuid() -> String {
@@ -6,8 +7,9 @@ pub fn new_uuid() -> String {
 
 pub fn nanoid(len: usize) -> String {
     let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz0123456789".chars().collect();
+    let mut rng = rand::thread_rng();
     (0..len)
-        .map(|_| chars[rand::random::<usize>() % chars.len()])
+        .map(|_| chars[rng.gen_range(0..chars.len())])
         .collect()
 }
 

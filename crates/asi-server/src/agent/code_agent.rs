@@ -59,7 +59,7 @@ mod tests {
     #[async_trait]
     impl AiProvider for TestProvider {
         async fn chat(&self, _request: ChatRequest) -> Result<ChatResponse, ProviderError> {
-            unimplemented!("not needed for construction test")
+            Err(ProviderError::Unavailable("test provider".into()))
         }
 
         async fn chat_stream(
@@ -69,7 +69,7 @@ mod tests {
             Pin<Box<dyn Stream<Item = Result<StreamChunk, ProviderError>> + Send>>,
             ProviderError,
         > {
-            unimplemented!("not needed for construction test")
+            Err(ProviderError::Unavailable("test provider".into()))
         }
 
         async fn health_check(&self) -> Result<bool, ProviderError> {
