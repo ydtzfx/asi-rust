@@ -1,0 +1,13 @@
+[package]
+name = "asi-evolution"
+edition.workspace = true
+version.workspace = true
+
+[dependencies]
+asi-lib = { path = "../asi-lib" }
+asi-ai-sdk = { path = "../asi-ai-sdk" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+async-trait = "0.1"
