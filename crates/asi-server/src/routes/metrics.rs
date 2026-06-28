@@ -29,7 +29,10 @@ async fn get_metrics() -> (StatusCode, HeaderMap, String) {
     output.push_str("# TYPE asi_db_pool_size gauge\n");
     let pool = asi_db::get_db();
     let size = pool.size() as u64;
-    output.push_str(&format!("asi_db_pool_size {} 1\n", size));
+    let idle = pool.num_idle() as u64;
+    output.push_str(&format!("asi_db_pool_size {}\n", size));
+    output.push_str(&format!("asi_db_pool_idle {}\n", idle));
+    output.push_str(&format!("asi_db_pool_active {}\n", size.saturating_sub(idle)));
 
     let mut headers = HeaderMap::new();
     headers.insert(
