@@ -10,6 +10,12 @@ use crate::middleware::{GlobalRateLimitLayer, ResponseTimeLayer};
 use crate::routes;
 
 /// Build the production router with auth on protected routes.
+///
+/// NOTE: leptos SSR (`render_app_to_stream`) is temporarily replaced with
+/// a static handler due to a leptos_meta 0.7.8 panic ("you are using
+/// leptos_meta without a </head> tag").  The Html/Body components in this
+/// version do not emit the expected HTML skeleton.  Tracked for a follow-up
+/// fix (requires either updating leptos_meta or providing a custom HTML shell).
 pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
     let api_routes = build_api_routes(true);
     let cors = CorsLayer::permissive();
@@ -23,19 +29,19 @@ pub fn build_router(_leptos_options: leptos::config::LeptosOptions) -> Router {
         .layer(cors)
 }
 
-/// Build a router for integration tests (no auth middleware).
-pub fn build_test_router() -> Router {
-    let api_routes = build_api_routes(false);
-    Router::new().nest("/api", api_routes)
-}
-
-/// Safe fallback handler — avoids leptos SSR panics that would kill tokio workers.
+/// Safe fallback — avoids leptos SSR panics that kill tokio workers.
 async fn fallback_handler() -> Response {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
         .header("content-type", "text/plain")
-        .body(Body::from("Not Found"))
+        .body(Body::from("Not Found — API at /api"))
         .unwrap()
+}
+
+/// Build a router for integration tests (no auth middleware).
+pub fn build_test_router() -> Router {
+    let api_routes = build_api_routes(false);
+    Router::new().nest("/api", api_routes)
 }
 
 fn build_api_routes(require_auth: bool) -> Router {
