@@ -1,4 +1,6 @@
 pub mod coordinator;
+pub mod deep_agent;
+pub mod explorer;
 pub mod memory;
 pub mod planner;
 pub mod reasoning;
