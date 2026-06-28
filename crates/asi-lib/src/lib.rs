@@ -1,4 +1,5 @@
 pub mod cache;
+pub mod cache_redis;
 pub mod circuit_breaker;
 pub mod concurrency;
 pub mod config;
