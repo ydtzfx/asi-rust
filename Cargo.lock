@@ -93,6 +93,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "asi-cortex"
+version = "0.1.0"
+dependencies = [
+ "asi-ai-sdk",
+ "asi-lib",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "asi-db"
 version = "0.1.0"
 dependencies = [
@@ -102,6 +114,18 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+]
+
+[[package]]
+name = "asi-defense"
+version = "0.1.0"
+dependencies = [
+ "asi-auth",
+ "asi-lib",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
