@@ -64,10 +64,27 @@ async fn fetch_jwks() -> Result<Vec<JwkKey>, AuthError> {
 }
 
 /// Verify a Clerk session JWT and return the authenticated user.
-/// The token can be the raw JWT from Clerk's __session cookie
+/// The token can be the raw JWT from Clerk's `__session` cookie
 /// or the standard Authorization header format.
 pub async fn verify_clerk_jwt(token: &str) -> Result<AuthenticatedUser, AuthError> {
     let header = decode_header(token).map_err(|e| AuthError::InvalidToken(e.to_string()))?;
+
+    // Validate JWT type and algorithm before processing.
+    if let Some(ref typ) = header.typ {
+        if typ.to_uppercase() != "JWT" {
+            return Err(AuthError::InvalidToken(format!(
+                "Invalid token type: expected JWT, got {}",
+                typ
+            )));
+        }
+    }
+    if header.alg != Algorithm::RS256 {
+        return Err(AuthError::InvalidToken(format!(
+            "Invalid algorithm: expected RS256, got {:?}",
+            header.alg
+        )));
+    }
+
     let kid = header
         .kid
         .ok_or_else(|| AuthError::InvalidToken("Missing kid".into()))?;
