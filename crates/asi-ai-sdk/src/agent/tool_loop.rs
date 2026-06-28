@@ -188,10 +188,10 @@ async fn call_provider_streaming(
     }
 
     tracing::info!("Calling provider.chat_stream()…");
-    let mut stream = provider
-        .chat_stream(request)
+    let config = asi_lib::retry::RetryConfig::default();
+    let mut stream = asi_lib::retry::retry(&config, || provider.chat_stream(request.clone()))
         .await
-        .map_err(|e| format!("Provider error: {}", e))?;
+        .map_err(|e| format!("Provider error after retries: {}", e))?;
 
     let mut full_content = String::new();
     let mut tool_calls: Option<Vec<ToolCall>> = None;
@@ -261,10 +261,10 @@ async fn call_provider_non_streaming(
     };
 
     tracing::info!("Calling provider.chat()…");
-    let response = provider
-        .chat(request)
+    let config = asi_lib::retry::RetryConfig::default();
+    let response = asi_lib::retry::retry(&config, || provider.chat(request.clone()))
         .await
-        .map_err(|e| format!("Provider error: {}", e))?;
+        .map_err(|e| format!("Provider error after retries: {}", e))?;
 
     tracing::info!(
         choices = response.choices.len(),

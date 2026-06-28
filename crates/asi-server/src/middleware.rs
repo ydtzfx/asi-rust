@@ -117,6 +117,10 @@ where
                 "x-response-time-ms",
                 axum::http::HeaderValue::from_str(&elapsed_ms.to_string()).unwrap(),
             );
+            response.headers_mut().insert(
+                "x-api-version",
+                axum::http::HeaderValue::from_static(env!("CARGO_PKG_VERSION")),
+            );
             Ok(response)
         })
     }
