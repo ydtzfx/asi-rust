@@ -1,9 +1,32 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::sync::Mutex;
+use std::time::Duration;
+
 use crate::agent::tool::ToolMap;
 use crate::provider::AiProvider;
 use crate::types::*;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tokio::sync::mpsc;
+use tokio_stream::StreamExt;
+
+/// LLM response cache to avoid redundant API calls.
+/// Keyed by conversation hash, expires after 5 minutes.
+static LLM_CACHE: std::sync::LazyLock<Mutex<asi_lib::cache::Cache<String>>> =
+    std::sync::LazyLock::new(|| {
+        Mutex::new(asi_lib::cache::Cache::new(Duration::from_secs(300)))
+    });
+
+/// Hash a conversation to use as a cache key.
+fn conversation_hash(messages: &[Message]) -> String {
+    let mut hasher = DefaultHasher::new();
+    for msg in messages {
+        msg.role.hash(&mut hasher);
+        msg.content.hash(&mut hasher);
+    }
+    format!("{:x}", hasher.finish())
+}
 
 /// Event emitted during agent execution (for SSE streaming).
 #[derive(Debug, Clone)]
@@ -135,6 +158,141 @@ impl ToolLoopAgent {
     }
 }
 
+/// Call the provider with streaming (first iteration), sending text deltas
+/// to the client in real-time while collecting the full response.
+async fn call_provider_streaming(
+    provider: &Arc<dyn AiProvider>,
+    conversation: &[Message],
+    tools: &Option<Vec<ToolDefinition>>,
+    tx: &mpsc::UnboundedSender<AgentEvent>,
+) -> Result<(String, Option<Vec<ToolCall>>, Option<Usage>), String> {
+    let request = ChatRequest {
+        model: String::new(),
+        messages: conversation.to_vec(),
+        tools: tools.clone(),
+        temperature: None,
+        max_tokens: Some(4096),
+        stream: Some(true),
+    };
+
+    // Check cache for non-tool queries (streaming path only).
+    let cache_key = conversation_hash(conversation);
+    if tools.is_none() || tools.as_ref().map_or(true, |t| t.is_empty()) {
+        if let Some(cached) = LLM_CACHE.lock().ok().and_then(|c| c.get(&cache_key)) {
+            tracing::info!("LLM cache hit");
+            let _ = tx.send(AgentEvent::TextDelta {
+                content: cached.clone(),
+            });
+            return Ok((cached, None, None));
+        }
+    }
+
+    tracing::info!("Calling provider.chat_stream()…");
+    let mut stream = provider
+        .chat_stream(request)
+        .await
+        .map_err(|e| format!("Provider error: {}", e))?;
+
+    let mut full_content = String::new();
+    let mut tool_calls: Option<Vec<ToolCall>> = None;
+    let usage: Option<Usage> = None;
+
+    while let Some(chunk) = stream.as_mut().next().await {
+        match chunk {
+            Ok(chunk) => {
+                for choice in &chunk.choices {
+                    // Accumulate text deltas and send them immediately.
+                    if let Some(ref content) = choice.delta.content {
+                        full_content.push_str(content);
+                        if tx
+                            .send(AgentEvent::TextDelta {
+                                content: content.clone(),
+                            })
+                            .is_err()
+                        {
+                            return Ok((full_content, tool_calls, usage));
+                        }
+                    }
+                    // Collect tool calls (typically arrive in final chunk).
+                    if let Some(ref tc) = choice.delta.tool_calls {
+                        tool_calls = Some(tc.clone());
+                    }
+                }
+                // Extract usage from the last chunk that has it.
+                // Note: streaming chunks don't typically carry usage;
+                // we estimate from token count or leave as None.
+            }
+            Err(e) => {
+                return Err(format!("Stream error: {}", e));
+            }
+        }
+    }
+
+    tracing::info!(
+        content_len = full_content.len(),
+        has_tool_calls = tool_calls.is_some(),
+        "Streaming response complete"
+    );
+
+    // Cache non-tool responses.
+    if tool_calls.is_none() && !full_content.is_empty() {
+        if let Ok(cache) = LLM_CACHE.lock() {
+            cache.set(&cache_key, full_content.clone());
+        }
+    }
+
+    Ok((full_content, tool_calls, usage))
+}
+
+/// Call the provider non-streaming (subsequent tool-call iterations).
+async fn call_provider_non_streaming(
+    provider: &Arc<dyn AiProvider>,
+    conversation: &[Message],
+    tools: &Option<Vec<ToolDefinition>>,
+    tx: &mpsc::UnboundedSender<AgentEvent>,
+) -> Result<(String, Option<Vec<ToolCall>>, Option<Usage>), String> {
+    let request = ChatRequest {
+        model: String::new(),
+        messages: conversation.to_vec(),
+        tools: tools.clone(),
+        temperature: None,
+        max_tokens: Some(4096),
+        stream: Some(false),
+    };
+
+    tracing::info!("Calling provider.chat()…");
+    let response = provider
+        .chat(request)
+        .await
+        .map_err(|e| format!("Provider error: {}", e))?;
+
+    tracing::info!(
+        choices = response.choices.len(),
+        has_usage = response.usage.is_some(),
+        "Provider response received"
+    );
+
+    let choice = response.choices.into_iter().next();
+    match choice {
+        Some(c) => {
+            let content = c.message.content;
+            // Send text content if non-empty.
+            if !content.is_empty() {
+                if tx
+                    .send(AgentEvent::TextDelta {
+                        content: content.clone(),
+                    })
+                    .is_err()
+                {
+                    return Ok((content, c.message.tool_calls, response.usage));
+                }
+            }
+            Ok((content, c.message.tool_calls, response.usage))
+        }
+        None => Ok((String::new(), None, response.usage)),
+    }
+}
+
 /// Core agent loop — runs inside a spawned Tokio task.
 ///
 /// Algorithm:
@@ -176,64 +334,43 @@ async fn run_agent_loop(
             "Agent loop iteration"
         );
 
-        let request = ChatRequest {
-            model: String::new(), // provider fills this in
-            messages: conversation.clone(),
-            tools: tools_for_request.clone(),
-            temperature: None,
-            max_tokens: Some(4096), // cap response length to prevent runaway
-            stream: Some(false),
-        };
+        // Use streaming for the first iteration (better UX), non-streaming
+        // for subsequent tool-call iterations (faster, no user-visible text).
+        let use_streaming = _step == 0;
 
-        tracing::info!("Calling provider.chat()…");
-        let response = match provider.chat(request).await {
-            Ok(r) => {
-                tracing::info!(
-                    choices = r.choices.len(),
-                    has_usage = r.usage.is_some(),
-                    "Provider response received"
-                );
-                r
-            }
-            Err(e) => {
-                tracing::error!(error = %e, "Provider call failed");
-                let _ = tx.send(AgentEvent::Error {
-                    message: format!("Provider error: {}", e),
-                });
-                return;
-            }
-        };
-
-        let choice = match response.choices.first() {
-            Some(c) => c,
-            None => {
-                let _ = tx.send(AgentEvent::Done {
-                    usage: response.usage,
-                });
-                return;
-            }
-        };
-
-        // Send any text content the assistant produced.
-        if !choice.message.content.is_empty() {
-            if tx
-                .send(AgentEvent::TextDelta {
-                    content: choice.message.content.clone(),
-                })
-                .is_err()
+        let (assistant_content, assistant_tool_calls, usage) = if use_streaming {
+            match call_provider_streaming(&provider, &conversation, &tools_for_request, &tx).await
             {
-                // Receiver dropped — client disconnected.
-                tracing::info!("Agent loop: receiver dropped, stopping");
-                return;
+                Ok(result) => result,
+                Err(e) => {
+                    let _ = tx.send(AgentEvent::Error { message: e });
+                    return;
+                }
             }
-        }
+        } else {
+            match call_provider_non_streaming(&provider, &conversation, &tools_for_request, &tx)
+                .await
+            {
+                Ok(result) => result,
+                Err(e) => {
+                    let _ = tx.send(AgentEvent::Error { message: e });
+                    return;
+                }
+            }
+        };
+
+        // Push assistant message to conversation.
+        let assistant_msg = Message {
+            role: Role::Assistant,
+            content: assistant_content.clone(),
+            tool_calls: assistant_tool_calls.clone(),
+            tool_call_id: None,
+        };
+        conversation.push(assistant_msg);
 
         // Check for tool calls.
-        match &choice.message.tool_calls {
+        match &assistant_tool_calls {
             Some(tool_calls) if !tool_calls.is_empty() => {
-                // Push the assistant message (with tool_calls) into the conversation.
-                conversation.push(choice.message.clone());
-
                 // Execute each tool and add results as Role::Tool messages.
                 for tc in tool_calls {
                     if cancel.is_cancelled() {
@@ -263,9 +400,7 @@ async fn run_agent_loop(
             }
             _ => {
                 // No tool calls: agent is finished.
-                let _ = tx.send(AgentEvent::Done {
-                    usage: response.usage,
-                });
+                let _ = tx.send(AgentEvent::Done { usage });
                 return;
             }
         }
