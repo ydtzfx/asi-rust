@@ -1,0 +1,66 @@
+{
+  "dashboard": {
+    "title": "ASI Server",
+    "uid": "asi-server",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "type": "graph",
+        "targets": [
+          { "expr": "rate(asi_api_calls_total[1m])", "legendFormat": "{{route}}" }
+        ],
+        "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 }
+      },
+      {
+        "title": "Database Pool Size",
+        "type": "stat",
+        "targets": [
+          { "expr": "asi_db_pool_size" }
+        ],
+        "gridPos": { "x": 12, "y": 0, "w": 4, "h": 4 }
+      },
+      {
+        "title": "Active Sessions",
+        "type": "stat",
+        "targets": [
+          { "expr": "asi_sessions_total" }
+        ],
+        "gridPos": { "x": 16, "y": 0, "w": 4, "h": 4 }
+      },
+      {
+        "title": "Server Info",
+        "type": "stat",
+        "targets": [
+          { "expr": "asi_server_info" }
+        ],
+        "gridPos": { "x": 20, "y": 0, "w": 4, "h": 4 }
+      },
+      {
+        "title": "Health Status",
+        "type": "stat",
+        "targets": [
+          { "expr": "asi_health_status" }
+        ],
+        "gridPos": { "x": 12, "y": 4, "w": 4, "h": 4 },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              { "type": "value", "value": "1", "text": "Healthy" },
+              { "type": "value", "value": "0", "text": "Degraded" }
+            ]
+          }
+        }
+      },
+      {
+        "title": "Response Time (p95)",
+        "type": "graph",
+        "targets": [
+          { "expr": "histogram_quantile(0.95, rate(asi_response_time_bucket[5m]))", "legendFormat": "p95" }
+        ],
+        "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 }
+      }
+    ],
+    "schemaVersion": 38,
+    "tags": ["asi", "rust"]
+  }
+}

@@ -1,0 +1,28 @@
+# Caddy reverse proxy — TLS termination + static file serving
+# Usage: caddy run --config Caddyfile
+
+asi.example.com {
+    # Automatic TLS via Let's Encrypt
+    # tls admin@example.com
+
+    # Reverse proxy to ASI server
+    reverse_proxy localhost:3000
+
+    # Security headers
+    header {
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Referrer-Policy strict-origin-when-cross-origin
+        -Server
+    }
+
+    # Rate limiting (optional)
+    # rate_limit {
+    #     zone static 10r/s
+    # }
+}
+
+# Local development (no TLS)
+:3001 {
+    reverse_proxy localhost:3000
+}

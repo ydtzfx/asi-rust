@@ -1,0 +1,39 @@
+# Prometheus alerting rules for ASI server
+groups:
+  - name: asi-server
+    rules:
+      - alert: ASIServerDown
+        expr: up{job="asi-server"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ASI server is down"
+          description: "The ASI server at {{ $labels.instance }} has been unreachable for 1 minute."
+
+      - alert: ASIDatabaseDegraded
+        expr: asi_health_status == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ASI database health check failing"
+          description: "Database health check has been failing for 2 minutes."
+
+      - alert: ASIHighErrorRate
+        expr: rate(asi_api_calls_total{status="5xx"}[5m]) / rate(asi_api_calls_total[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ASI high error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes."
+
+      - alert: ASIRateLimitTriggered
+        expr: rate(asi_rate_limited_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: info
+        annotations:
+          summary: "ASI rate limiting active"
+          description: "Rate limiter has been triggered {{ $value }} times in the last 5 minutes."
