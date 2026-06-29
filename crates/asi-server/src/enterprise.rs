@@ -49,10 +49,8 @@ pub fn init_enterprise(heal_engine: Arc<SelfHealEngine>) {
     runtime.prompt_evo.register("code_agent", "You are a coding assistant.");
     runtime.prompt_evo.register("review_agent", "You are a code reviewer.");
 
-    // Seed knowledge base with project context.
-    runtime.knowledge.upsert("project", "ASI-Rust: 15-crate enterprise AI coding platform");
-    runtime.knowledge.upsert("language", "Rust edition 2024, async runtime: Tokio");
-    runtime.knowledge.upsert("framework", "Web: Axum 0.7, Frontend: Leptos 0.7, DB: SQLite via sqlx");
+    // Seed knowledge base with comprehensive project context.
+    crate::knowledge_seed::seed_knowledge(&runtime.knowledge);
 
     ENTERPRISE
         .set(Arc::new(tokio::sync::Mutex::new(runtime)))

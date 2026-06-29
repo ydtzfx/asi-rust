@@ -1,6 +1,7 @@
 pub mod agent;
 pub mod enterprise;
 pub mod error;
+pub mod knowledge_seed;
 pub mod middleware;
 pub mod router;
 pub mod routes;
