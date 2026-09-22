@@ -71,7 +71,7 @@ pub fn start_enterprise_loop() {
         loop {
             interval.tick().await;
             if let Some(ent) = enterprise() {
-                let mut rt = ent.lock().await;
+                let rt = ent.lock().await;
 
                 // Collect snapshot.
                 let snapshot = rt.cortex_monitor.snapshot();
