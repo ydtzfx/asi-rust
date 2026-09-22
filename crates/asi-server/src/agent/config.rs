@@ -21,6 +21,13 @@ pub fn is_compact_mode() -> bool {
     asi_lib::flags::flag("read-only-mode")
 }
 
+/// Serializes tests that mutate the process-global `read-only-mode` override.
+///
+/// `asi-lib` is a dependency of this crate's tests, so its own `cfg(test)`
+/// thread-local override storage is not active here.
+#[cfg(test)]
+pub(crate) static FLAG_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -29,6 +36,10 @@ mod tests {
     /// Tests are combined into one to avoid races on the global flag state.
     #[test]
     fn test_config_flag_integration() {
+        let _guard = FLAG_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
+
         // Default (no override)
         flags::reset_flag("read-only-mode");
         assert_eq!(get_max_steps(), 20);
