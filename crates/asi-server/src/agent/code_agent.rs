@@ -85,6 +85,9 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_default() {
+        let _guard = super::super::config::FLAG_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         asi_lib::flags::reset_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
         let agent = build_code_agent(provider);
@@ -96,6 +99,9 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_read_only() {
+        let _guard = super::super::config::FLAG_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         asi_lib::flags::reset_flag("read-only-mode");
         asi_lib::flags::set_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
