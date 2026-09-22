@@ -25,7 +25,7 @@ impl ChainOfThought {
     /// Returns the final answer after multiple reasoning steps.
     pub async fn reason(&self, problem: &str, max_steps: usize) -> Result<String, String> {
         let mut steps: Vec<ReasoningStep> = Vec::new();
-        let mut current_question = problem.to_string();
+        let current_question = problem.to_string();
 
         for i in 0..max_steps {
             let prompt = if i == 0 {

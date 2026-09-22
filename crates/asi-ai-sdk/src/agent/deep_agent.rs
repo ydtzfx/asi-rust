@@ -24,13 +24,12 @@ pub enum DeepStage {
 /// Deep agent — iterative Plan-Execute-Reflect-Revise cycle.
 pub struct DeepAgent {
     provider: Arc<dyn AiProvider>,
-    tools: ToolMap,
     max_iterations: u32,
 }
 
 impl DeepAgent {
-    pub fn new(provider: Arc<dyn AiProvider>, tools: ToolMap, max_iterations: u32) -> Self {
-        Self { provider, tools, max_iterations }
+    pub fn new(provider: Arc<dyn AiProvider>, _tools: ToolMap, max_iterations: u32) -> Self {
+        Self { provider, max_iterations }
     }
 
     /// Run the deep agent cycle on a task.
@@ -68,7 +67,6 @@ async fn run_deep_cycle(
 
     let mut current_output = String::new();
     let mut iteration = 0u32;
-    let mut stage = DeepStage::Plan;
 
     // --- Stage 1: Plan ---
     let _ = tx.send(AgentEvent::TextDelta { content: "### 1. Plan\n".into() });
@@ -87,8 +85,24 @@ async fn run_deep_cycle(
         tree.branch(&root, line.trim(), score_thought(line));
     }
     let best_path = tree.best_path();
+    let best_path_text = if best_path.len() > 1 {
+        best_path
+            .iter()
+            .skip(1)
+            .enumerate()
+            .map(|(i, step)| format!("{}. {}", i + 1, step))
+            .collect::<Vec<_>>()
+            .join("\n")
+    } else {
+        "(root only)".to_string()
+    };
     let _ = tx.send(AgentEvent::TextDelta {
-        content: format!("*Best reasoning path ({} nodes, avg score {:.2}):*\n", tree.size(), tree.avg_score()),
+        content: format!(
+            "*Best reasoning path ({} nodes, avg score {:.2}):*\n{}\n",
+            tree.size(),
+            tree.avg_score(),
+            best_path_text
+        ),
     });
 
     // --- Stage 2: Execute + Stage 3: Reflect + Stage 4: Revise ---
@@ -99,7 +113,6 @@ async fn run_deep_cycle(
         iteration += 1;
 
         // Execute: generate output
-        stage = DeepStage::Execute;
         let exec_prompt = if iteration == 1 {
             format!(
                 "Task: {}\n\nPlan:\n{}\n\nExecute the plan. Produce the best output you can.",
@@ -118,7 +131,6 @@ async fn run_deep_cycle(
         });
 
         // Reflect: self-assess quality
-        stage = DeepStage::Reflect;
         let reflect_prompt = format!(
             "Rate this output quality from 0.0 to 1.0 (just the number):\n\nTask: {}\n\nOutput:\n{}\n\nScore:",
             task, output
@@ -133,18 +145,27 @@ async fn run_deep_cycle(
 
         // Check if quality is sufficient
         if quality >= quality_threshold || iteration >= max_iter {
-            stage = if quality >= quality_threshold { DeepStage::Complete } else { DeepStage::Abandoned };
+            let final_stage = if quality >= quality_threshold {
+                DeepStage::Complete
+            } else {
+                DeepStage::Abandoned
+            };
             let _ = tx.send(AgentEvent::TextDelta {
-                content: format!("\n### {}\n\n**Final output:**\n\n{}",
-                    if stage == DeepStage::Complete { "✅ Complete" } else { "⚠️ Max iterations reached" },
-                    current_output),
+                content: format!(
+                    "\n### {}\n\n**Final output:**\n\n{}",
+                    if final_stage == DeepStage::Complete {
+                        "✅ Complete"
+                    } else {
+                        "⚠️ Max iterations reached"
+                    },
+                    current_output
+                ),
             });
             let _ = tx.send(AgentEvent::Done { usage: None });
             return Ok(());
         }
 
         // Revise — implicit in the next iteration's exec_prompt (which asks for improvements)
-        stage = DeepStage::Revise;
         let _ = tx.send(AgentEvent::TextDelta {
             content: format!("*Revising — quality {:.2} < {:.2}*\n", quality, quality_threshold),
         });
