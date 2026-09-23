@@ -1,7 +1,6 @@
 //! ASI Analytics — enterprise data lake with BI, trends, predictive insights.
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// A usage data point collected over time.
 #[derive(Debug, Clone, Serialize, Deserialize)]
