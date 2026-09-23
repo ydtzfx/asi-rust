@@ -3,7 +3,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 /// Six stages of the enterprise closed loop.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
