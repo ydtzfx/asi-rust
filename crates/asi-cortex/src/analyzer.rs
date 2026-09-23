@@ -25,6 +25,10 @@ pub enum AnomalySeverity { Warning, Critical }
 /// Cross-system analyzer — finds correlations and anomalies.
 pub struct CortexAnalyzer;
 
+impl Default for CortexAnalyzer {
+    fn default() -> Self { Self::new() }
+}
+
 impl CortexAnalyzer {
     pub fn new() -> Self { Self }
 
@@ -48,24 +52,24 @@ impl CortexAnalyzer {
                 degraded.push(name.to_string());
             }
             for metric in &health.metrics {
-                if let Some(crit) = metric.threshold_crit {
-                    if metric.value > crit {
-                        anomalies.push(Anomaly {
-                            subsystem: name.to_string(),
-                            metric: metric.key.clone(),
-                            value: metric.value,
-                            expected: format!("< {}", crit),
-                            severity: AnomalySeverity::Critical,
-                        });
-                    }
+                if let Some(crit) = metric.threshold_crit
+                    && metric.value > crit
+                {
+                    anomalies.push(Anomaly {
+                        subsystem: name.to_string(),
+                        metric: metric.key.clone(),
+                        value: metric.value,
+                        expected: format!("< {}", crit),
+                        severity: AnomalySeverity::Critical,
+                    });
                 }
-                if let Some(warn) = metric.threshold_warn {
-                    if metric.value > warn {
-                        recommendations.push(format!(
-                            "{}: {} is {}{} (threshold: {})",
-                            name, metric.key, metric.value, metric.unit, warn
-                        ));
-                    }
+                if let Some(warn) = metric.threshold_warn
+                    && metric.value > warn
+                {
+                    recommendations.push(format!(
+                        "{}: {} is {}{} (threshold: {})",
+                        name, metric.key, metric.value, metric.unit, warn
+                    ));
                 }
             }
         }
