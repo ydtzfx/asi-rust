@@ -49,10 +49,10 @@ async fn check_provider() -> bool {
         }
     }
     // DeepSeek: try a lightweight API check
-    if std::env::var("DEEPSEEK_API_KEY").is_ok() {
-        if let Ok(resp) = reqwest::get("https://api.deepseek.com/v1/models").await {
-            return resp.status().is_success();
-        }
+    if std::env::var("DEEPSEEK_API_KEY").is_ok()
+        && let Ok(resp) = reqwest::get("https://api.deepseek.com/v1/models").await
+    {
+        return resp.status().is_success();
     }
     // No known provider configured — assume degraded.
     false
