@@ -8,21 +8,19 @@ async fn get_stats() -> Json<Value> {
     let user_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM users")
         .fetch_one(pool)
         .await
-        .map_err(|e| {
+        .inspect_err(|e| {
             asi_lib::logger::error("stats: failed to count users", &[("error", &e.to_string())]);
-            e
         })
         .unwrap_or(0);
 
     let session_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM sessions")
         .fetch_one(pool)
         .await
-        .map_err(|e| {
+        .inspect_err(|e| {
             asi_lib::logger::error(
                 "stats: failed to count sessions",
                 &[("error", &e.to_string())],
             );
-            e
         })
         .unwrap_or(0);
 
@@ -30,36 +28,33 @@ async fn get_stats() -> Json<Value> {
         sqlx::query_scalar("SELECT COALESCE(SUM(token_used), 0) FROM sessions")
             .fetch_one(pool)
             .await
-            .map_err(|e| {
+            .inspect_err(|e| {
                 asi_lib::logger::error(
                     "stats: failed to sum tokens",
                     &[("error", &e.to_string())],
                 );
-                e
             })
             .unwrap_or(0);
 
     let project_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM projects")
         .fetch_one(pool)
         .await
-        .map_err(|e| {
+        .inspect_err(|e| {
             asi_lib::logger::error(
                 "stats: failed to count projects",
                 &[("error", &e.to_string())],
             );
-            e
         })
         .unwrap_or(0);
 
     let audit_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM audit_log")
         .fetch_one(pool)
         .await
-        .map_err(|e| {
+        .inspect_err(|e| {
             asi_lib::logger::error(
                 "stats: failed to count audit entries",
                 &[("error", &e.to_string())],
             );
-            e
         })
         .unwrap_or(0);
 
