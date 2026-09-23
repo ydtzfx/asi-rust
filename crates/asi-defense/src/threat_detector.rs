@@ -31,6 +31,12 @@ pub struct ThreatDetector {
     pattern_counts: Mutex<HashMap<String, u64>>,
 }
 
+impl Default for ThreatDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ThreatDetector {
     pub fn new() -> Self {
         Self {
@@ -92,8 +98,9 @@ impl ThreatDetector {
         }
 
         // Check for suspicious headers.
-        if headers.contains_key("x-forwarded-for")
-            && headers.get("x-forwarded-for").map_or(false, |v| v.contains(','))
+        if headers
+            .get("x-forwarded-for")
+            .is_some_and(|v| v.contains(','))
         {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
@@ -133,7 +140,7 @@ impl ThreatDetector {
     pub fn recent(&self, limit: usize) -> Vec<Threat> {
         let store = self.threats.lock().unwrap();
         let mut threats = store.clone();
-        threats.sort_by(|a, b| b.detected_at.cmp(&a.detected_at));
+        threats.sort_by_key(|threat| std::cmp::Reverse(threat.detected_at));
         threats.truncate(limit);
         threats
     }
