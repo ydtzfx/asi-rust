@@ -63,12 +63,10 @@ impl Reflector {
             .map(|c| c.message.content.clone())
             .unwrap_or_default();
 
-        // Parse JSON response (best-effort).
         Self::parse_reflection(&content)
     }
 
     fn parse_reflection(json_str: &str) -> Result<ReflectionResult, String> {
-        // Extract JSON from potential markdown wrapping.
         let json = json_str
             .trim()
             .trim_start_matches("```json")
@@ -94,7 +92,6 @@ impl Reflector {
                 improved_output: improved,
             })
         } else {
-            // If JSON parsing fails, assume acceptable.
             Ok(ReflectionResult {
                 is_acceptable: true,
                 score: 5,
@@ -111,14 +108,15 @@ impl Reflector {
         output: &str,
     ) -> Result<String, String> {
         let reflection = self.reflect(task, output).await?;
-        if let Some(improved) = reflection.improved_output {
-            if !improved.is_empty() && reflection.score < 7 {
-                tracing::info!(
-                    "Self-reflection: score={}/10, auto-improving output",
-                    reflection.score
-                );
-                return Ok(improved);
-            }
+        if let Some(improved) = reflection.improved_output
+            && !improved.is_empty()
+            && reflection.score < 7
+        {
+            tracing::info!(
+                "Self-reflection: score={}/10, auto-improving output",
+                reflection.score
+            );
+            return Ok(improved);
         }
         Ok(output.to_string())
     }
