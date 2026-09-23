@@ -32,12 +32,10 @@ impl CircuitBreaker {
 
         // Circuit is open — check if reset timeout has elapsed.
         let last = self.last_failure.lock().unwrap();
-        if let Some(t) = *last {
-            if t.elapsed() >= self.reset_timeout {
-                // Transition to half-open.
-                self.half_open.store(1, Ordering::SeqCst);
-                return true;
-            }
+        if let Some(t) = *last && t.elapsed() >= self.reset_timeout {
+            // Transition to half-open.
+            self.half_open.store(1, Ordering::SeqCst);
+            return true;
         }
         false
     }
