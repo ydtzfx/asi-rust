@@ -24,6 +24,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: "1.96"
+          components: clippy, rustfmt
 
       - name: Cache cargo deps
         uses: actions/cache@v4
@@ -43,7 +44,7 @@ jobs:
 
       - name: Test count check
         run: |
-          COUNT=$(cargo test --workspace -- --list 2>/dev/null | grep -c "test " || echo "0")
+          COUNT=$(cargo test --workspace -- --list 2>/dev/null | grep -c ': test$' || true)
           echo "Test count: $COUNT"
           if [ "$COUNT" -lt 100 ]; then
             echo "ERROR: fewer than 100 tests found ($COUNT). Coverage gate failed."
