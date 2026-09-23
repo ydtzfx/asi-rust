@@ -27,6 +27,10 @@ pub enum DecisionAction {
 /// Decision engine — chooses actions based on analysis and predictions.
 pub struct CortexDecision;
 
+impl Default for CortexDecision {
+    fn default() -> Self { Self::new() }
+}
+
 impl CortexDecision {
     pub fn new() -> Self { Self }
 
