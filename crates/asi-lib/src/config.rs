@@ -37,7 +37,7 @@ impl Config {
                 ("database_url", &self.database_url),
                 (
                     "ai_provider",
-                    &if self.deepseek_api_key.is_some() {
+                    if self.deepseek_api_key.is_some() {
                         "deepseek"
                     } else {
                         "ollama"
@@ -51,14 +51,14 @@ impl Config {
         if self.database_url == "asi.db" {
             let warning = "DATABASE_URL is using default 'asi.db' (relative path). \
                 Set an absolute path for production deployments.";
-            crate::logger::warn("Config", &[("warning", &warning)]);
+            crate::logger::warn("Config", &[("warning", warning)]);
             warnings.push(warning.to_string());
         }
 
         // Warn if EVOLVE_SECRET is not set
         if env::var("EVOLVE_SECRET").unwrap_or_default().is_empty() {
             let warning = "EVOLVE_SECRET is not set — /api/evolve endpoint will return 503.";
-            crate::logger::warn("Config", &[("warning", &warning)]);
+            crate::logger::warn("Config", &[("warning", warning)]);
             warnings.push(warning.to_string());
         }
 
