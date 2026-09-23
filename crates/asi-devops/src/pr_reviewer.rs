@@ -35,6 +35,12 @@ pub struct PrReviewer {
     pub auto_approve_threshold: FindingSeverity,
 }
 
+impl Default for PrReviewer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PrReviewer {
     pub fn new() -> Self {
         Self {
