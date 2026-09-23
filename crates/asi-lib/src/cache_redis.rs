@@ -1,9 +1,9 @@
-/// Redis-backed cache adapter.
-///
-/// When `CACHE_BACKEND=redis` and `REDIS_URL` env vars are set,
-/// uses Redis for distributed caching across multiple server processes.
-///
-/// Falls back to in-memory cache if Redis is not configured.
+//! Redis-backed cache adapter.
+//!
+//! When `CACHE_BACKEND=redis` and `REDIS_URL` env vars are set,
+//! uses Redis for distributed caching across multiple server processes.
+//!
+//! Falls back to in-memory cache if Redis is not configured.
 
 use std::time::Duration;
 
@@ -31,14 +31,12 @@ pub fn get_cache() -> Box<dyn CacheBackend> {
         .map(Duration::from_secs).unwrap_or(Duration::from_secs(300));
 
     let backend = std::env::var("CACHE_BACKEND").unwrap_or_else(|_| "memory".into());
-    if backend == "redis" {
-        if let Ok(redis_url) = std::env::var("REDIS_URL") {
-            let safe = redis_url.split('@').last().unwrap_or(&redis_url);
-            tracing::info!("Using Redis cache backend: {}", safe);
-            // In production with redis feature enabled:
-            // return Box::new(RedisCache::new(&redis_url, ttl));
-            // Falls back to memory cache until redis feature is compiled.
-        }
+    if backend == "redis" && let Ok(redis_url) = std::env::var("REDIS_URL") {
+        let safe = redis_url.split('@').next_back().unwrap_or(&redis_url);
+        tracing::info!("Using Redis cache backend: {}", safe);
+        // In production with redis feature enabled:
+        // return Box::new(RedisCache::new(&redis_url, ttl));
+        // Falls back to memory cache until redis feature is compiled.
     }
     Box::new(MemoryCache::new(ttl))
 }
