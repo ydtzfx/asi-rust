@@ -15,6 +15,12 @@ pub enum DefenseAction {
 /// Auto-response engine — takes defensive action based on threat level.
 pub struct AutoResponder;
 
+impl Default for AutoResponder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutoResponder {
     pub fn new() -> Self {
         Self
