@@ -211,7 +211,6 @@ where
             return Box::pin(async { Ok(response) });
         }
 
-        let future = self.inner.call(req);
-        Box::pin(async move { future.await })
+        Box::pin(self.inner.call(req))
     }
 }
