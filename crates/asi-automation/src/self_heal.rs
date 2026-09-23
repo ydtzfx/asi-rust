@@ -31,6 +31,12 @@ pub struct SelfHealEngine {
     rollback_threshold: u32,   // L4→L5
 }
 
+impl Default for SelfHealEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SelfHealEngine {
     pub fn new() -> Self {
         Self {
