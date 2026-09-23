@@ -11,6 +11,12 @@ pub struct FixResult {
 /// Auto-fixer — applies AI-suggested fixes to review findings.
 pub struct AutoFixer;
 
+impl Default for AutoFixer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutoFixer {
     pub fn new() -> Self {
         Self
