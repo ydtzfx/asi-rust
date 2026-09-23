@@ -33,6 +33,12 @@ pub struct AdaptiveFirewall {
     deny_list: Mutex<HashSet<String>>,
 }
 
+impl Default for AdaptiveFirewall {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AdaptiveFirewall {
     pub fn new() -> Self {
         let mut deny_list = HashSet::new();
