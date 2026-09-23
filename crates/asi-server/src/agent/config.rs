@@ -22,13 +22,16 @@ pub fn is_compact_mode() -> bool {
 }
 
 #[cfg(test)]
+pub(super) static FLAG_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use asi_lib::flags;
 
-    /// Tests are combined into one to avoid races on the global flag state.
     #[test]
     fn test_config_flag_integration() {
+        let _guard = FLAG_TEST_LOCK.lock().unwrap();
         flags::reset_flag("read-only-mode");
         let baseline_steps = get_max_steps();
         let baseline_compact = is_compact_mode();
