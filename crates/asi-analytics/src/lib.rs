@@ -36,6 +36,10 @@ pub struct DataLake {
     points: std::sync::Mutex<Vec<UsagePoint>>,
 }
 
+impl Default for DataLake {
+    fn default() -> Self { Self::new() }
+}
+
 impl DataLake {
     pub fn new() -> Self { Self { points: std::sync::Mutex::new(Vec::new()) } }
 
