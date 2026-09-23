@@ -31,8 +31,8 @@ fn bench_tool_map_lookup() {
     tools.insert("echo".into(), Arc::new(EchoTool) as Arc<dyn Tool>);
 
     // Verify tool lookup works
-    assert!(tools.get("echo").is_some());
-    assert!(tools.get("nonexistent").is_none());
+    assert!(tools.contains_key("echo"));
+    assert!(!tools.contains_key("nonexistent"));
 }
 
 #[test]
