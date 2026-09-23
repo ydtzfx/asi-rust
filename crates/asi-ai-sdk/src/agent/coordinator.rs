@@ -3,9 +3,8 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 
 use super::memory::AgentMemory;
-use super::planner::{Plan, SubTask, TaskStatus, decompose_goal};
+use super::planner::{Plan, decompose_goal};
 use super::tool_loop::{AgentEvent, CancelToken, ToolLoopAgent};
-use crate::provider::AiProvider;
 use crate::types::Message;
 
 /// Multi-agent coordinator — decomposes tasks, routes to specialists,
@@ -64,7 +63,7 @@ impl Coordinator {
     /// Execute a multi-step plan through agent delegation.
     async fn execute_plan(
         &self,
-        mut plan: Plan,
+        plan: Plan,
         messages: Vec<Message>,
     ) -> Result<(mpsc::UnboundedReceiver<AgentEvent>, CancelToken), String> {
         let (tx, rx) = mpsc::unbounded_channel();
@@ -76,7 +75,8 @@ impl Coordinator {
         let cancel_clone = cancel.clone();
 
         tokio::spawn(async move {
-            let _ = run_plan(&code_agent, &review_agent, plan, messages, tx_clone, cancel_clone).await;
+            let _ =
+                run_plan(&code_agent, &review_agent, plan, messages, tx_clone, cancel_clone).await;
         });
 
         Ok((rx, cancel))
@@ -146,8 +146,16 @@ async fn run_plan(
                         AgentEvent::ToolCall { name, arguments } => {
                             let _ = tx.send(AgentEvent::ToolCall { name, arguments });
                         }
-                        AgentEvent::ToolResult { name, result, truncated } => {
-                            let _ = tx.send(AgentEvent::ToolResult { name, result, truncated });
+                        AgentEvent::ToolResult {
+                            name,
+                            result,
+                            truncated,
+                        } => {
+                            let _ = tx.send(AgentEvent::ToolResult {
+                                name,
+                                result,
+                                truncated,
+                            });
                         }
                         AgentEvent::Done { .. } => break,
                         AgentEvent::Error { message } => {
