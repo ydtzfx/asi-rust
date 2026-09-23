@@ -26,6 +26,12 @@ pub struct DefenseInDepth {
     pub layers: Vec<DefenseLayer>,
 }
 
+impl Default for DefenseInDepth {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DefenseInDepth {
     pub fn new() -> Self {
         Self {
