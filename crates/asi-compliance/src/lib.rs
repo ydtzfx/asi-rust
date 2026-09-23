@@ -55,6 +55,12 @@ pub struct ComplianceEngine {
     policies: std::sync::Mutex<Vec<PolicyRule>>,
 }
 
+impl Default for ComplianceEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ComplianceEngine {
     pub fn new() -> Self {
         let controls = vec![
