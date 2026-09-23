@@ -85,6 +85,7 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_default() {
+        let _guard = super::super::config::FLAG_TEST_LOCK.lock().unwrap();
         asi_lib::flags::reset_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
         let agent = build_code_agent(provider);
@@ -96,15 +97,12 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_read_only() {
+        let _guard = super::super::config::FLAG_TEST_LOCK.lock().unwrap();
         asi_lib::flags::reset_flag("read-only-mode");
         asi_lib::flags::set_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
         let agent = build_code_agent(provider);
-        assert!(
-            agent.max_steps() == 5 || agent.max_steps() == 20,
-            "Agent step count should be 5 (read-only) or 20 (normal), got {}",
-            agent.max_steps()
-        );
+        assert_eq!(agent.max_steps(), 5);
         asi_lib::flags::reset_flag("read-only-mode");
     }
 }
