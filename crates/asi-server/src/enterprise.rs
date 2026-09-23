@@ -96,10 +96,10 @@ pub fn start_enterprise_loop() {
                 );
 
                 // Detect threats and respond.
-                if let Some(first_decision) = decisions.first() {
-                    if first_decision.auto_execute {
-                        tracing::warn!("Cortex auto-executing: {:?}", first_decision.action);
-                    }
+                if let Some(first_decision) = decisions.first()
+                    && first_decision.auto_execute
+                {
+                    tracing::warn!("Cortex auto-executing: {:?}", first_decision.action);
                 }
             }
         }
