@@ -35,6 +35,12 @@ pub struct AutonomousPipeline {
     deployer: DeployVerifier,
 }
 
+impl Default for AutonomousPipeline {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutonomousPipeline {
     pub fn new() -> Self {
         Self {
