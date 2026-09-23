@@ -19,6 +19,12 @@ pub struct AbTestEngine {
     experiments: Mutex<HashMap<String, Experiment>>,
 }
 
+impl Default for AbTestEngine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AbTestEngine {
     pub fn new() -> Self {
         Self {
@@ -119,24 +125,12 @@ mod tests {
     fn test_ab_test_basic() {
         let engine = AbTestEngine::new();
         engine.create("prompt_v1", "Original prompt", "Improved prompt");
-
-        // B variant performs better
-        for _ in 0..10 {
-            engine.record("prompt_v1", false, true);
-        }
-        for _ in 0..10 {
-            engine.record("prompt_v1", true, true);
-        }
-
-        // At this point both are equal, no winner
+        for _ in 0..10 { engine.record("prompt_v1", false, true); }
+        for _ in 0..10 { engine.record("prompt_v1", true, true); }
         assert!(engine.winner("prompt_v1").unwrap().contains("No significant"));
-
-        // Make B slightly better
         engine.record("prompt_v1", true, true);
         engine.record("prompt_v1", false, false);
-
-        let winner = engine.winner("prompt_v1");
-        assert!(winner.is_some());
+        assert!(engine.winner("prompt_v1").is_some());
     }
 
     #[test]
