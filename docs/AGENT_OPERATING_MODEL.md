@@ -10,7 +10,7 @@ integration tests and an authorization model.
 | Agent | Job | Allowed scope |
 | --- | --- | --- |
 | planner | requirements, task graph, acceptance criteria | read-only |
-| rust-engineer | smallest code changes plus focused tests | isolated worktree |
+| rust-engineer | smallest code changes plus focused tests; parent runs checks | isolated worktree; no Bash |
 | ci-diagnostician | diagnose parent-supplied exact-HEAD original CI logs | read-only |
 | verifier | independently audit captured local checks and exact-HEAD CI logs supplied by parent | read-only, no Bash |
 | reviewer | correctness, API and regression review | read-only |
@@ -25,7 +25,7 @@ Delegate only material work; trivial single-file lookups can be direct.
 ## Workflow and completion criteria
 
 1. Planner decomposes significant work and defines explicit DoD and rollback.
-2. Parent gives Rust engineer the target branch and expected starting SHA, and prepares the correct base. A Claude Code worktree defaults to the default branch unless configured otherwise; Rust engineer must verify `git rev-parse HEAD` equals expected SHA BEFORE writing. On mismatch, abort and re-delegate. Then implement one scoped task in the isolated worktree.
+2. Parent checks `git rev-parse HEAD` and `git status` in the prepared isolated worktree and supplies the exact target PR branch, SHA and verification evidence to Rust engineer BEFORE delegation. Worktrees may otherwise start from master. Rust engineer has no Bash tool; without the parent's SHA/isolation proof it must stop and request re-delegation. The parent executes formatting, tests, Clippy and all git operations; the engineer edits only its assigned worktree.
 3. Reviewer checks every nontrivial patch; security auditor checks all changes
    affecting auth, agent tools, external input, secrets, self-change or deployment.
 4. Parent executes the repository's exact quality commands, preserving logs and exit codes. The verifier has no Bash tool and independently audits captured output plus GitHub job metadata for the exact PR HEAD.
