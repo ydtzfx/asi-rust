@@ -45,11 +45,11 @@ jobs:
         run: |
           COUNT=$(cargo test --workspace -- --list 2>/dev/null | grep -c "test " || echo "0")
           echo "Test count: $COUNT"
-          if [ "$COUNT" -lt 100 ]; then
-            echo "ERROR: fewer than 100 tests found ($COUNT). Coverage gate failed."
+          if [ "$COUNT" -lt 200 ]; then
+            echo "ERROR: fewer than 200 tests found ($COUNT). Coverage gate failed."
             exit 1
           fi
-          echo "Coverage gate: $COUNT tests (minimum 100)"
+          echo "Coverage gate: $COUNT tests (minimum 200)"
 
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
