@@ -34,22 +34,22 @@ pub async fn require_auth(mut request: Request, next: Next) -> Result<Response, 
         .map(|v| v == "true" || v == "1")
         .unwrap_or(false);
     let clerk_key = std::env::var("CLERK_SECRET_KEY").unwrap_or_default();
-    if dev_bypass_enabled && clerk_key.starts_with("sk_test_") {
-        if let Some(user_id) = request
+    if dev_bypass_enabled
+        && clerk_key.starts_with("sk_test_")
+        && let Some(user_id) = request
             .headers()
             .get("x-user-id")
             .and_then(|v| v.to_str().ok())
-        {
-            let user = AuthenticatedUser {
-                sub: user_id.to_string(),
-                email: format!("{}@dev.local", user_id),
-                first_name: Some("Dev".into()),
-                last_name: Some("User".into()),
-                org_id: None,
-            };
-            request.extensions_mut().insert(Arc::new(user));
-            return Ok(next.run(request).await);
-        }
+    {
+        let user = AuthenticatedUser {
+            sub: user_id.to_string(),
+            email: format!("{}@dev.local", user_id),
+            first_name: Some("Dev".into()),
+            last_name: Some("User".into()),
+            org_id: None,
+        };
+        request.extensions_mut().insert(Arc::new(user));
+        return Ok(next.run(request).await);
     }
 
     Err(StatusCode::UNAUTHORIZED)

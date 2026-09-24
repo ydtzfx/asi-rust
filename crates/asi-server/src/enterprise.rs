@@ -10,9 +10,9 @@ use asi_cortex::monitor::CortexMonitor;
 use asi_cortex::predictor::CortexPredictor;
 use asi_defense::defense_layers::DefenseInDepth;
 use asi_defense::threat_detector::ThreatDetector;
-use asi_evolution::prompt_evo::PromptEvolution;
-use asi_evolution::knowledge::KnowledgeBase;
 use asi_evolution::ab_test::AbTestEngine;
+use asi_evolution::knowledge::KnowledgeBase;
+use asi_evolution::prompt_evo::PromptEvolution;
 
 /// Global enterprise state initialized at startup.
 pub struct EnterpriseRuntime {
@@ -46,8 +46,12 @@ pub fn init_enterprise(heal_engine: Arc<SelfHealEngine>) {
     };
 
     // Register base prompts for evolution.
-    runtime.prompt_evo.register("code_agent", "You are a coding assistant.");
-    runtime.prompt_evo.register("review_agent", "You are a code reviewer.");
+    runtime
+        .prompt_evo
+        .register("code_agent", "You are a coding assistant.");
+    runtime
+        .prompt_evo
+        .register("review_agent", "You are a code reviewer.");
 
     // Seed knowledge base with comprehensive project context.
     crate::knowledge_seed::seed_knowledge(&runtime.knowledge);
@@ -71,7 +75,7 @@ pub fn start_enterprise_loop() {
         loop {
             interval.tick().await;
             if let Some(ent) = enterprise() {
-                let mut rt = ent.lock().await;
+                let rt = ent.lock().await;
 
                 // Collect snapshot.
                 let snapshot = rt.cortex_monitor.snapshot();
@@ -96,10 +100,10 @@ pub fn start_enterprise_loop() {
                 );
 
                 // Detect threats and respond.
-                if let Some(first_decision) = decisions.first() {
-                    if first_decision.auto_execute {
-                        tracing::warn!("Cortex auto-executing: {:?}", first_decision.action);
-                    }
+                if let Some(first_decision) = decisions.first()
+                    && first_decision.auto_execute
+                {
+                    tracing::warn!("Cortex auto-executing: {:?}", first_decision.action);
                 }
             }
         }

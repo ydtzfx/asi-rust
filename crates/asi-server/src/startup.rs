@@ -9,7 +9,9 @@ use asi_automation::watchdog::Watchdog;
 static ENGINE: OnceLock<Arc<SelfHealEngine>> = OnceLock::new();
 
 pub fn get_heal_engine() -> Arc<SelfHealEngine> {
-    ENGINE.get_or_init(|| Arc::new(SelfHealEngine::new())).clone()
+    ENGINE
+        .get_or_init(|| Arc::new(SelfHealEngine::new()))
+        .clone()
 }
 
 pub fn run_startup_hooks() {
@@ -26,7 +28,10 @@ pub fn run_startup_hooks() {
         wd.start();
         asi_lib::logger::info(
             "Watchdog started",
-            &[("timeout_secs", &config.watchdog_timeout.as_secs().to_string())],
+            &[(
+                "timeout_secs",
+                &config.watchdog_timeout.as_secs().to_string(),
+            )],
         );
     }
 
@@ -35,7 +40,10 @@ pub fn run_startup_hooks() {
         asi_automation::health_loop::start_health_loop(&config, engine);
         asi_lib::logger::info(
             "Self-healing health loop started",
-            &[("interval_secs", &config.health_interval.as_secs().to_string())],
+            &[(
+                "interval_secs",
+                &config.health_interval.as_secs().to_string(),
+            )],
         );
     }
 
@@ -68,10 +76,9 @@ pub fn run_startup_hooks() {
                     "Session cleanup completed",
                     &[("deleted", &count.to_string())],
                 ),
-                Err(e) => asi_lib::logger::error(
-                    "Session cleanup failed",
-                    &[("error", &e.to_string())],
-                ),
+                Err(e) => {
+                    asi_lib::logger::error("Session cleanup failed", &[("error", &e.to_string())])
+                }
             }
         }
     });

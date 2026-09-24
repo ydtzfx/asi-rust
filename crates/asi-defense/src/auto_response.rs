@@ -15,6 +15,12 @@ pub enum DefenseAction {
 /// Auto-response engine — takes defensive action based on threat level.
 pub struct AutoResponder;
 
+impl Default for AutoResponder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutoResponder {
     pub fn new() -> Self {
         Self
@@ -61,10 +67,7 @@ impl AutoResponder {
                 asi_lib::flags::set_flag("rate-limit-strict");
             }
             DefenseAction::Block { duration_secs } => {
-                tracing::error!(
-                    "Defense: blocked for {} seconds",
-                    duration_secs
-                );
+                tracing::error!("Defense: blocked for {} seconds", duration_secs);
             }
             DefenseAction::Isolate { reason } => {
                 tracing::error!("Defense: ISOLATING — {}", reason);
@@ -83,8 +86,8 @@ impl AutoResponder {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::threat_detector::ThreatDetector;
+    use super::*;
     use std::collections::HashMap;
 
     #[test]
@@ -106,6 +109,9 @@ mod tests {
         let responder = AutoResponder::new();
         let action = responder.respond(&threats[0]);
         // Should be at least High severity → AlertOps or stronger.
-        assert!(matches!(action, DefenseAction::AlertOps { .. } | DefenseAction::Isolate { .. }));
+        assert!(matches!(
+            action,
+            DefenseAction::AlertOps { .. } | DefenseAction::Isolate { .. }
+        ));
     }
 }

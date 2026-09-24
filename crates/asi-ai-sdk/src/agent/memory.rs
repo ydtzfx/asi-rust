@@ -60,7 +60,12 @@ impl AgentMemory {
 
         let mut scored: Vec<(f64, String)> = entries
             .iter()
-            .map(|e| (jaccard_similarity(&query_tokens, &e.tokens), e.content.clone()))
+            .map(|e| {
+                (
+                    jaccard_similarity(&query_tokens, &e.tokens),
+                    e.content.clone(),
+                )
+            })
             .collect();
 
         scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap_or(std::cmp::Ordering::Equal));

@@ -50,15 +50,13 @@ fn run_backup(db_path: &str, keep_days: u32) -> Result<String, String> {
 
 fn cleanup_old(dir: &str, keep_days: u32) {
     if let Ok(entries) = std::fs::read_dir(dir) {
-        let cutoff = std::time::SystemTime::now()
-            - Duration::from_secs(keep_days as u64 * 86400);
+        let cutoff = std::time::SystemTime::now() - Duration::from_secs(keep_days as u64 * 86400);
         for entry in entries.flatten() {
-            if let Ok(meta) = entry.metadata() {
-                if let Ok(modified) = meta.modified() {
-                    if modified < cutoff {
-                        let _ = std::fs::remove_file(entry.path());
-                    }
-                }
+            if let Ok(meta) = entry.metadata()
+                && let Ok(modified) = meta.modified()
+                && modified < cutoff
+            {
+                let _ = std::fs::remove_file(entry.path());
             }
         }
     }

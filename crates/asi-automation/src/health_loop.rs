@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use tokio::time::MissedTickBehavior;
 
-use super::self_heal::SelfHealEngine;
 use super::AutomationConfig;
+use super::self_heal::SelfHealEngine;
 
 /// Start the continuous health-check loop.
 pub fn start_health_loop(config: &AutomationConfig, engine: Arc<SelfHealEngine>) {

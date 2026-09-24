@@ -1,19 +1,13 @@
 /// Task categories for model routing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TaskCategory {
-    /// Simple factual Q&A.
     SimpleQA,
-    /// Code generation or modification.
     CodeGen,
-    /// Code review or analysis.
     CodeReview,
-    /// Complex multi-step reasoning.
     ComplexReasoning,
-    /// Creative writing or brainstorming.
     Creative,
 }
 
-/// Model recommendation for a task category.
 #[derive(Debug, Clone)]
 pub struct ModelChoice {
     pub model: String,
@@ -21,12 +15,15 @@ pub struct ModelChoice {
     pub reason: String,
 }
 
-/// Model picker — routes tasks to the optimal model based on category.
 pub struct ModelPicker {
-    /// Available models by category preference.
     preferences: Vec<(TaskCategory, Vec<ModelChoice>)>,
-    /// Default model.
     default: ModelChoice,
+}
+
+impl Default for ModelPicker {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ModelPicker {
@@ -75,22 +72,16 @@ impl ModelPicker {
                 ),
             ],
             default: ModelChoice {
-                model: std::env::var("OLLAMA_MODEL")
-                    .unwrap_or_else(|_| "gemma4:31b-cloud".into()),
+                model: std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into()),
                 provider: "ollama".into(),
                 reason: "Default configured model".into(),
             },
         }
     }
 
-    /// Classify a user message into a task category.
     pub fn classify(&self, message: &str) -> TaskCategory {
         let msg = message.to_lowercase();
-
-        // Check review first (before code gen, since "review this code" contains "code")
-        if msg.contains("review")
-            || msg.contains("audit")
-        {
+        if msg.contains("review") || msg.contains("audit") {
             TaskCategory::CodeReview
         } else if msg.contains("explain")
             || msg.contains("why")
@@ -105,9 +96,7 @@ impl ModelPicker {
             || msg.contains("code")
         {
             TaskCategory::CodeGen
-        } else if msg.contains("check")
-            || msg.contains("analyze")
-        {
+        } else if msg.contains("check") || msg.contains("analyze") {
             TaskCategory::CodeReview
         } else if msg.contains("story")
             || msg.contains("poem")
@@ -120,13 +109,12 @@ impl ModelPicker {
         }
     }
 
-    /// Pick the best model for a given task.
     pub fn pick(&self, message: &str) -> ModelChoice {
         let category = self.classify(message);
-        if let Some((_, choices)) = self.preferences.iter().find(|(c, _)| *c == category) {
-            if let Some(choice) = choices.first() {
-                return choice.clone();
-            }
+        if let Some((_, choices)) = self.preferences.iter().find(|(c, _)| *c == category)
+            && let Some(choice) = choices.first()
+        {
+            return choice.clone();
         }
         self.default.clone()
     }
@@ -135,33 +123,23 @@ impl ModelPicker {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_classify_code_gen() {
-        let picker = ModelPicker::new();
-        assert_eq!(
-            picker.classify("build a REST API"),
-            TaskCategory::CodeGen
-        );
-        assert_eq!(
-            picker.classify("write a function"),
-            TaskCategory::CodeGen
-        );
+        let p = ModelPicker::new();
+        assert_eq!(p.classify("build a REST API"), TaskCategory::CodeGen);
+        assert_eq!(p.classify("write a function"), TaskCategory::CodeGen);
     }
-
     #[test]
     fn test_classify_review() {
-        let picker = ModelPicker::new();
+        let p = ModelPicker::new();
         assert_eq!(
-            picker.classify("review this code for bugs"),
+            p.classify("review this code for bugs"),
             TaskCategory::CodeReview
         );
     }
-
     #[test]
     fn test_pick_returns_appropriate_model() {
-        let picker = ModelPicker::new();
-        let choice = picker.pick("build a web server");
-        assert!(!choice.model.is_empty());
+        let p = ModelPicker::new();
+        assert!(!p.pick("build a web server").model.is_empty());
     }
 }

@@ -11,6 +11,12 @@ pub struct FixResult {
 /// Auto-fixer — applies AI-suggested fixes to review findings.
 pub struct AutoFixer;
 
+impl Default for AutoFixer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AutoFixer {
     pub fn new() -> Self {
         Self
@@ -41,16 +47,16 @@ impl AutoFixer {
 
     /// Check if all critical/major issues were fixed.
     pub fn all_blockers_fixed(&self, results: &[FixResult]) -> bool {
-        results.iter().all(|r| {
-            r.fixed || r.finding.severity > FindingSeverity::Major
-        })
+        results
+            .iter()
+            .all(|r| r.fixed || r.finding.severity > FindingSeverity::Major)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::pr_reviewer::PrReviewer;
+    use super::*;
 
     #[test]
     fn test_auto_fix_unwrap() {

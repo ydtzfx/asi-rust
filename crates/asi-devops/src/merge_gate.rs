@@ -16,6 +16,12 @@ pub struct MergeGate {
     pub require_auto_fix_complete: bool,
 }
 
+impl Default for MergeGate {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl MergeGate {
     pub fn new() -> Self {
         Self {

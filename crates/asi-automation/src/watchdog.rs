@@ -1,5 +1,5 @@
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::time::Duration;
 
 /// Process watchdog — monitors heartbeats and kills the process if it hangs.
@@ -20,8 +20,7 @@ impl Watchdog {
 
     /// Call from any thread to signal the process is alive.
     pub fn heartbeat(&self) {
-        self.last_heartbeat
-            .store(unix_now(), Ordering::SeqCst);
+        self.last_heartbeat.store(unix_now(), Ordering::SeqCst);
     }
 
     /// Start the watchdog monitor. If no heartbeat within `timeout`, kills the process.

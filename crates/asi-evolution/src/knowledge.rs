@@ -16,6 +16,12 @@ pub struct KnowledgeBase {
     insights: Mutex<HashMap<String, Insight>>,
 }
 
+impl Default for KnowledgeBase {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl KnowledgeBase {
     pub fn new() -> Self {
         Self {
@@ -23,7 +29,6 @@ impl KnowledgeBase {
         }
     }
 
-    /// Add or update an insight.
     pub fn upsert(&self, key: &str, content: &str) {
         let mut map = self.insights.lock().unwrap();
         if let Some(existing) = map.get_mut(key) {
@@ -43,13 +48,10 @@ impl KnowledgeBase {
         }
     }
 
-    /// Retrieve an insight by key.
     pub fn get(&self, key: &str) -> Option<Insight> {
-        let map = self.insights.lock().unwrap();
-        map.get(key).cloned()
+        self.insights.lock().unwrap().get(key).cloned()
     }
 
-    /// Search insights whose key or content contains the query.
     pub fn search(&self, query: &str) -> Vec<Insight> {
         let map = self.insights.lock().unwrap();
         let q = query.to_lowercase();
@@ -59,16 +61,14 @@ impl KnowledgeBase {
             .collect()
     }
 
-    /// Get the top N most-used insights.
     pub fn top(&self, n: usize) -> Vec<Insight> {
         let map = self.insights.lock().unwrap();
         let mut items: Vec<_> = map.values().cloned().collect();
-        items.sort_by(|a, b| b.times_used.cmp(&a.times_used));
+        items.sort_by_key(|item| std::cmp::Reverse(item.times_used));
         items.truncate(n);
         items
     }
 
-    /// Export all insights as a context string for agent prompts.
     pub fn as_context(&self, max_items: usize) -> String {
         let top = self.top(max_items);
         if top.is_empty() {
@@ -96,35 +96,28 @@ fn now() -> u64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_upsert_and_get() {
         let kb = KnowledgeBase::new();
         kb.upsert("rust_edition", "This project uses Rust edition 2024");
-        let insight = kb.get("rust_edition").unwrap();
-        assert_eq!(insight.content, "This project uses Rust edition 2024");
-        assert_eq!(insight.times_used, 1);
+        let i = kb.get("rust_edition").unwrap();
+        assert_eq!(i.content, "This project uses Rust edition 2024");
+        assert_eq!(i.times_used, 1);
     }
-
     #[test]
     fn test_search() {
         let kb = KnowledgeBase::new();
         kb.upsert("rust_error_handling", "Use thiserror for library errors");
         kb.upsert("rust_async", "Use tokio for async runtime");
-        let results = kb.search("error");
-        assert_eq!(results.len(), 1);
+        assert_eq!(kb.search("error").len(), 1);
     }
-
     #[test]
     fn test_top() {
         let kb = KnowledgeBase::new();
         kb.upsert("a", "A");
         kb.upsert("b", "B");
-        // Use b more
         kb.upsert("b", "B");
         kb.upsert("b", "B");
-
-        let top = kb.top(1);
-        assert_eq!(top[0].key, "b");
+        assert_eq!(kb.top(1)[0].key, "b");
     }
 }
