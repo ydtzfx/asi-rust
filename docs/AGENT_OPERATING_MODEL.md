@@ -11,8 +11,8 @@ integration tests and an authorization model.
 | --- | --- | --- |
 | planner | requirements, task graph, acceptance criteria | read-only |
 | rust-engineer | smallest code changes plus focused tests | isolated worktree |
-| ci-diagnostician | diagnose exact failures from actual CI logs | read-only |
-| verifier | independent build, test and CI evidence matrix | non-mutating verification |
+| ci-diagnostician | diagnose parent-supplied exact-HEAD original CI logs | read-only |
+| verifier | independently audit captured local checks and exact-HEAD CI logs supplied by parent | read-only, no Bash |
 | reviewer | correctness, API and regression review | read-only |
 | security-auditor | privilege, secrets and trust-boundary review | read-only |
 
@@ -25,16 +25,16 @@ Delegate only material work; trivial single-file lookups can be direct.
 ## Workflow and completion criteria
 
 1. Planner decomposes significant work and defines explicit DoD and rollback.
-2. Rust engineer implements one scoped task inside an isolated worktree.
+2. Parent gives Rust engineer the target branch and expected starting SHA, and prepares the correct base. A Claude Code worktree defaults to the default branch unless configured otherwise; Rust engineer must verify `git rev-parse HEAD` equals expected SHA BEFORE writing. On mismatch, abort and re-delegate. Then implement one scoped task in the isolated worktree.
 3. Reviewer checks every nontrivial patch; security auditor checks all changes
    affecting auth, agent tools, external input, secrets, self-change or deployment.
-4. Verifier executes the repository's actual quality commands and records output.
-5. CI diagnostician inspects failing **job logs**, not red status alone.
+4. Parent executes the repository's exact quality commands, preserving logs and exit codes. The verifier has no Bash tool and independently audits captured output plus GitHub job metadata for the exact PR HEAD.
+5. Parent fetches original failing CI job logs, job ID, run ID and exact PR HEAD, then passes them to CI diagnostician. A red status alone is insufficient; if no logs are available, diagnosis must stop.
 6. Parent updates the specific feature branch, waits for fresh CI on the exact
    HEAD, verifies all required checks and only then performs any authorized merge.
 
 For PR #3, every required gate on the exact current HEAD MUST have a GitHub
-success result: Ubuntu build, Ubuntu tests, test-count >=200, Clippy with
+success result: Ubuntu build, Ubuntu tests, test-count >=200 (enforced by the `.github/workflows/ci.yml` threshold on this branch), Clippy with
 `-D warnings`, format check, Windows build and Windows tests. Pending,
 skipped, cancelled, failed and unverified checks block merge. Do not change
 `master` directly or introduce lint suppressions as a substitute for a fix.
@@ -55,10 +55,7 @@ simulated actions, assumed production capability or unrun validation as done.
 
 ## Installation check
 
-Open a Claude Code session on this branch and inspect `/agents`, or ask
-the parent to delegate to each named agent. Confirm the six role definitions
-load, then run a harmless read-only reviewer task. This is a manual runtime
-check, not covered by repository file validation.
+Start a fresh Claude Code session on this branch (restart if `.claude/agents/` did not exist when an old session began). Explicitly @-mention each of the six named agents in harmless scoped tasks and check its actual tools and role. In particular delegate a read-only review to reviewer and supply sample original CI logs to ci-diagnostician. If you choose to validate `rust-engineer`, supply an exact target ref/SHA in a disposable isolated worktree. This is a manual runtime test: presence of config files alone does not prove agent loading or permission enforcement.
 
 ## Production AIS follow-up
 
