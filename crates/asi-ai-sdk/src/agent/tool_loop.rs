@@ -6,17 +6,15 @@ use std::time::Duration;
 use crate::agent::tool::ToolMap;
 use crate::provider::AiProvider;
 use crate::types::*;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::mpsc;
 use tokio_stream::StreamExt;
 
 /// LLM response cache to avoid redundant API calls.
 /// Keyed by conversation hash, expires after 5 minutes.
 static LLM_CACHE: std::sync::LazyLock<Mutex<asi_lib::cache::Cache<String>>> =
-    std::sync::LazyLock::new(|| {
-        Mutex::new(asi_lib::cache::Cache::new(Duration::from_secs(300)))
-    });
+    std::sync::LazyLock::new(|| Mutex::new(asi_lib::cache::Cache::new(Duration::from_secs(300))));
 
 /// Hash a conversation to use as a cache key.
 fn conversation_hash(messages: &[Message]) -> String {
@@ -31,11 +29,24 @@ fn conversation_hash(messages: &[Message]) -> String {
 /// Event emitted during agent execution (for SSE streaming).
 #[derive(Debug, Clone)]
 pub enum AgentEvent {
-    TextDelta { content: String },
-    ToolCall { name: String, arguments: String },
-    ToolResult { name: String, result: String, truncated: bool },
-    Done { usage: Option<Usage> },
-    Error { message: String },
+    TextDelta {
+        content: String,
+    },
+    ToolCall {
+        name: String,
+        arguments: String,
+    },
+    ToolResult {
+        name: String,
+        result: String,
+        truncated: bool,
+    },
+    Done {
+        usage: Option<Usage>,
+    },
+    Error {
+        message: String,
+    },
 }
 
 /// Maximum result length before truncation (shared with runCommand output limit).
@@ -55,7 +66,9 @@ impl Default for CancelToken {
 
 impl CancelToken {
     pub fn new() -> Self {
-        Self { cancelled: Arc::new(AtomicBool::new(false)) }
+        Self {
+            cancelled: Arc::new(AtomicBool::new(false)),
+        }
     }
 
     pub fn cancel(&self) {
@@ -77,12 +90,26 @@ pub struct ToolLoopAgent {
 }
 
 impl ToolLoopAgent {
-    pub fn new(provider: Arc<dyn AiProvider>, instructions: String, tools: ToolMap, max_steps: usize) -> Self {
-        Self { provider, instructions, tools, max_steps }
+    pub fn new(
+        provider: Arc<dyn AiProvider>,
+        instructions: String,
+        tools: ToolMap,
+        max_steps: usize,
+    ) -> Self {
+        Self {
+            provider,
+            instructions,
+            tools,
+            max_steps,
+        }
     }
 
-    pub fn max_steps(&self) -> usize { self.max_steps }
-    pub fn instructions(&self) -> &str { &self.instructions }
+    pub fn max_steps(&self) -> usize {
+        self.max_steps
+    }
+    pub fn instructions(&self) -> &str {
+        &self.instructions
+    }
 
     pub async fn execute(
         &self,
@@ -92,7 +119,8 @@ impl ToolLoopAgent {
         let cancel = CancelToken::new();
         let provider = Arc::clone(&self.provider);
         let tool_map = self.tools.clone();
-        let tool_definitions: Vec<ToolDefinition> = self.tools.values().map(|t| t.definition()).collect();
+        let tool_definitions: Vec<ToolDefinition> =
+            self.tools.values().map(|t| t.definition()).collect();
         let max_steps = self.max_steps;
         let tx_clone = tx.clone();
         let cancel_clone = cancel.clone();
@@ -105,7 +133,16 @@ impl ToolLoopAgent {
         conversation.extend(messages);
 
         tokio::spawn(async move {
-            run_agent_loop(provider, tool_map, tool_definitions, conversation, max_steps, tx_clone, cancel_clone).await;
+            run_agent_loop(
+                provider,
+                tool_map,
+                tool_definitions,
+                conversation,
+                max_steps,
+                tx_clone,
+                cancel_clone,
+            )
+            .await;
         });
         Ok((rx, cancel))
     }
@@ -131,7 +168,9 @@ async fn call_provider_streaming(
         && let Some(cached) = LLM_CACHE.lock().ok().and_then(|c| c.get(&cache_key))
     {
         tracing::info!("LLM cache hit");
-        let _ = tx.send(AgentEvent::TextDelta { content: cached.clone() });
+        let _ = tx.send(AgentEvent::TextDelta {
+            content: cached.clone(),
+        });
         return Ok((cached, None, None));
     }
 
@@ -151,7 +190,12 @@ async fn call_provider_streaming(
                 for choice in &chunk.choices {
                     if let Some(ref content) = choice.delta.content {
                         full_content.push_str(content);
-                        if tx.send(AgentEvent::TextDelta { content: content.clone() }).is_err() {
+                        if tx
+                            .send(AgentEvent::TextDelta {
+                                content: content.clone(),
+                            })
+                            .is_err()
+                        {
                             return Ok((full_content, tool_calls, usage));
                         }
                     }
@@ -164,9 +208,14 @@ async fn call_provider_streaming(
         }
     }
 
-    tracing::info!(content_len = full_content.len(), has_tool_calls = tool_calls.is_some(), "Streaming response complete");
+    tracing::info!(
+        content_len = full_content.len(),
+        has_tool_calls = tool_calls.is_some(),
+        "Streaming response complete"
+    );
 
-    if tool_calls.is_none() && !full_content.is_empty()
+    if tool_calls.is_none()
+        && !full_content.is_empty()
         && let Ok(cache) = LLM_CACHE.lock()
     {
         cache.set(&cache_key, full_content.clone());
@@ -196,14 +245,22 @@ async fn call_provider_non_streaming(
         .await
         .map_err(|e| format!("Provider error after retries: {}", e))?;
 
-    tracing::info!(choices = response.choices.len(), has_usage = response.usage.is_some(), "Provider response received");
+    tracing::info!(
+        choices = response.choices.len(),
+        has_usage = response.usage.is_some(),
+        "Provider response received"
+    );
 
     let choice = response.choices.into_iter().next();
     match choice {
         Some(c) => {
             let content = c.message.content;
             if !content.is_empty()
-                && tx.send(AgentEvent::TextDelta { content: content.clone() }).is_err()
+                && tx
+                    .send(AgentEvent::TextDelta {
+                        content: content.clone(),
+                    })
+                    .is_err()
             {
                 return Ok((content, c.message.tool_calls, response.usage));
             }
@@ -222,7 +279,11 @@ async fn run_agent_loop(
     tx: mpsc::UnboundedSender<AgentEvent>,
     cancel: CancelToken,
 ) {
-    let tools_for_request = if tool_definitions.is_empty() { None } else { Some(tool_definitions) };
+    let tools_for_request = if tool_definitions.is_empty() {
+        None
+    } else {
+        Some(tool_definitions)
+    };
 
     for step in 0..max_steps {
         if cancel.is_cancelled() {
@@ -254,11 +315,18 @@ async fn run_agent_loop(
         match &assistant_tool_calls {
             Some(tool_calls) if !tool_calls.is_empty() => {
                 for tc in tool_calls {
-                    if cancel.is_cancelled() { return; }
-                    if tx.send(AgentEvent::ToolCall {
-                        name: tc.function.name.clone(),
-                        arguments: tc.function.arguments.clone(),
-                    }).is_err() { return; }
+                    if cancel.is_cancelled() {
+                        return;
+                    }
+                    if tx
+                        .send(AgentEvent::ToolCall {
+                            name: tc.function.name.clone(),
+                            arguments: tc.function.arguments.clone(),
+                        })
+                        .is_err()
+                    {
+                        return;
+                    }
                     let result = execute_one_tool(&tool_map, tc, &tx).await;
                     conversation.push(Message {
                         role: Role::Tool,
@@ -276,7 +344,10 @@ async fn run_agent_loop(
     }
 
     let _ = tx.send(AgentEvent::Error {
-        message: format!("Agent reached maximum steps ({}) without completing the task.", max_steps),
+        message: format!(
+            "Agent reached maximum steps ({}) without completing the task.",
+            max_steps
+        ),
     });
 }
 
@@ -290,11 +361,16 @@ async fn execute_one_tool(
     let tool = tool_map.get(name);
     let (result, truncated) = match tool {
         Some(t) => {
-            let parsed_args: serde_json::Value = serde_json::from_str(args_str).unwrap_or(serde_json::Value::Null);
+            let parsed_args: serde_json::Value =
+                serde_json::from_str(args_str).unwrap_or(serde_json::Value::Null);
             match t.execute(parsed_args).await {
                 Ok(output) => {
                     let trunc = output.len() > MAX_RESULT_LEN;
-                    let display = if trunc { truncate_utf8_safe(&output, MAX_RESULT_LEN) } else { output };
+                    let display = if trunc {
+                        truncate_utf8_safe(&output, MAX_RESULT_LEN)
+                    } else {
+                        output
+                    };
                     (display, trunc)
                 }
                 Err(e) => (format!("Tool error: {}", e), false),
@@ -302,14 +378,22 @@ async fn execute_one_tool(
         }
         None => (format!("Unknown tool: {}", name), false),
     };
-    let _ = tx.send(AgentEvent::ToolResult { name: name.clone(), result: result.clone(), truncated });
+    let _ = tx.send(AgentEvent::ToolResult {
+        name: name.clone(),
+        result: result.clone(),
+        truncated,
+    });
     result
 }
 
 fn truncate_utf8_safe(s: &str, max_bytes: usize) -> String {
-    if s.len() <= max_bytes { return s.to_string(); }
+    if s.len() <= max_bytes {
+        return s.to_string();
+    }
     let mut end = max_bytes;
-    while end > 0 && !s.is_char_boundary(end) { end -= 1; }
+    while end > 0 && !s.is_char_boundary(end) {
+        end -= 1;
+    }
     s[..end].to_string()
 }
 
@@ -318,10 +402,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_truncate_ascii() { assert_eq!(truncate_utf8_safe("hello", 3), "hel"); }
+    fn test_truncate_ascii() {
+        assert_eq!(truncate_utf8_safe("hello", 3), "hel");
+    }
 
     #[test]
-    fn test_truncate_noop() { assert_eq!(truncate_utf8_safe("hi", 10), "hi"); }
+    fn test_truncate_noop() {
+        assert_eq!(truncate_utf8_safe("hi", 10), "hi");
+    }
 
     #[test]
     fn test_truncate_multibyte() {

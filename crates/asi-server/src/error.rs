@@ -1,6 +1,6 @@
+use axum::Json;
 use axum::http::StatusCode;
 use axum::response::{IntoResponse, Response};
-use axum::Json;
 use serde::Serialize;
 
 /// RFC 7807 Problem Details — standard error response format.
@@ -73,11 +73,8 @@ impl ProblemDetails {
     }
 
     pub fn too_many_requests(retry_after_secs: u64) -> Self {
-        Self::new(
-            StatusCode::TOO_MANY_REQUESTS,
-            "Rate limit exceeded",
-        )
-        .with_detail(format!("Retry after {} seconds", retry_after_secs))
+        Self::new(StatusCode::TOO_MANY_REQUESTS, "Rate limit exceeded")
+            .with_detail(format!("Retry after {} seconds", retry_after_secs))
     }
 
     pub fn internal_error(detail: &str) -> Self {

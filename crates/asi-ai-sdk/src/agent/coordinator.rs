@@ -75,8 +75,15 @@ impl Coordinator {
         let cancel_clone = cancel.clone();
 
         tokio::spawn(async move {
-            let _ =
-                run_plan(&code_agent, &review_agent, plan, messages, tx_clone, cancel_clone).await;
+            let _ = run_plan(
+                &code_agent,
+                &review_agent,
+                plan,
+                messages,
+                tx_clone,
+                cancel_clone,
+            )
+            .await;
         });
 
         Ok((rx, cancel))
@@ -134,8 +141,7 @@ async fn run_plan(
             Ok((task_rx, _task_cancel)) => {
                 // Collect task output.
                 let mut output = String::new();
-                let mut stream =
-                    tokio_stream::wrappers::UnboundedReceiverStream::new(task_rx);
+                let mut stream = tokio_stream::wrappers::UnboundedReceiverStream::new(task_rx);
 
                 while let Some(event) = tokio_stream::StreamExt::next(&mut stream).await {
                     match event {

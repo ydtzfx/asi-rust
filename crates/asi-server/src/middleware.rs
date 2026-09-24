@@ -179,11 +179,7 @@ where
     fn call(&mut self, req: Request<ReqBody>) -> Self::Future {
         let path = req.uri().path().to_string();
         // Extract a coarse endpoint key (e.g. "/api/chat", "/api/sessions").
-        let key = path
-            .split('/')
-            .take(3)
-            .collect::<Vec<_>>()
-            .join("/");
+        let key = path.split('/').take(3).collect::<Vec<_>>().join("/");
 
         let denied = {
             let mut map = GLOBAL_LIMITER.lock().unwrap();

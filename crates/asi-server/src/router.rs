@@ -67,7 +67,5 @@ fn build_api_routes(require_auth: bool) -> Router {
         protected
     };
 
-    Router::new()
-        .merge(public_routes)
-        .merge(protected_routes)
+    Router::new().merge(public_routes).merge(protected_routes)
 }

@@ -90,9 +90,9 @@ impl Plan {
 
     /// Whether all tasks are resolved (completed or failed).
     pub fn is_done(&self) -> bool {
-        self.tasks.iter().all(|t| {
-            matches!(t.status, TaskStatus::Completed | TaskStatus::Failed(_))
-        })
+        self.tasks
+            .iter()
+            .all(|t| matches!(t.status, TaskStatus::Completed | TaskStatus::Failed(_)))
     }
 
     /// Progress summary.
@@ -128,7 +128,9 @@ pub fn decompose_goal(goal: &str) -> Plan {
             ],
             AgentType::Code,
         )
-    } else if goal_lower.contains("fix") || goal_lower.contains("debug") || goal_lower.contains("bug")
+    } else if goal_lower.contains("fix")
+        || goal_lower.contains("debug")
+        || goal_lower.contains("bug")
     {
         Plan::linear(
             goal,

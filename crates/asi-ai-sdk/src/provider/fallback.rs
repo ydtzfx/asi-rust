@@ -83,9 +83,9 @@ impl AiProvider for FallbackProvider {
 /// Returns true for errors where retrying with a different provider makes sense.
 fn is_retryable(e: &ProviderError) -> bool {
     match e {
-        ProviderError::Http(_) => true,          // timeout, connection refused
+        ProviderError::Http(_) => true, // timeout, connection refused
         ProviderError::Api { status, .. } => *status >= 500, // server errors
-        ProviderError::Unavailable(_) => true,    // explicitly unavailable
-        ProviderError::Parse(_) => false,         // bad response — won't help
+        ProviderError::Unavailable(_) => true, // explicitly unavailable
+        ProviderError::Parse(_) => false, // bad response — won't help
     }
 }

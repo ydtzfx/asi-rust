@@ -1,7 +1,7 @@
 /// Micro-benchmarks for agent loop components.
 /// These are not full E2E tests — they measure in-process performance.
 use asi_ai_sdk::agent::tool::{Tool, ToolError, ToolMap};
-use asi_ai_sdk::types::{Role, Message, ToolDefinition, FunctionDef};
+use asi_ai_sdk::types::{FunctionDef, Message, Role, ToolDefinition};
 use async_trait::async_trait;
 use std::sync::Arc;
 

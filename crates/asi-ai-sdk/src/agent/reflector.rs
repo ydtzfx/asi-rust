@@ -23,11 +23,7 @@ impl Reflector {
 
     /// Reflect on the quality of an agent's output.
     /// Returns a score and optionally an improved version.
-    pub async fn reflect(
-        &self,
-        task: &str,
-        output: &str,
-    ) -> Result<ReflectionResult, String> {
+    pub async fn reflect(&self, task: &str, output: &str) -> Result<ReflectionResult, String> {
         let prompt = format!(
             "Review this AI agent output for the task: \"{}\"\n\n\
              Output:\n{}\n\n\
@@ -78,7 +74,11 @@ impl Reflector {
             let score = val["score"].as_u64().unwrap_or(5) as u8;
             let issues: Vec<String> = val["issues"]
                 .as_array()
-                .map(|a| a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
             let improved = val["improved"]
                 .as_str()
@@ -102,11 +102,7 @@ impl Reflector {
     }
 
     /// Reflect and auto-improve: if score < 7, returns the improved version.
-    pub async fn reflect_and_improve(
-        &self,
-        task: &str,
-        output: &str,
-    ) -> Result<String, String> {
+    pub async fn reflect_and_improve(&self, task: &str, output: &str) -> Result<String, String> {
         let reflection = self.reflect(task, output).await?;
         if let Some(improved) = reflection.improved_output
             && !improved.is_empty()

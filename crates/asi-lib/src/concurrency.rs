@@ -41,7 +41,9 @@ impl ConcurrencyLimiter {
     pub fn release(&self) {
         let prev = self.active.load(Ordering::SeqCst);
         if prev == 0 {
-            tracing::warn!("ConcurrencyLimiter: release called with no active slots (double-release?)");
+            tracing::warn!(
+                "ConcurrencyLimiter: release called with no active slots (double-release?)"
+            );
             return;
         }
         self.active.fetch_sub(1, Ordering::SeqCst);

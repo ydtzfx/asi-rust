@@ -51,12 +51,9 @@ fn test_detects_known_attacks() {
     for (input, should_detect) in &attacks {
         let detected = !detect_prompt_injection(input).is_empty();
         assert_eq!(
-            detected,
-            *should_detect,
+            detected, *should_detect,
             "Unexpected result for '{}': detected={}, expected={}",
-            input,
-            detected,
-            should_detect
+            input, detected, should_detect
         );
     }
 }

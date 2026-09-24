@@ -34,7 +34,10 @@ async fn problem_details_contract() {
     // RFC 7807 required fields
     assert!(json.get("type").is_some(), "Missing 'type' field");
     assert!(json.get("title").is_some(), "Missing 'title' field");
-    assert!(json.get("status_code").is_some(), "Missing 'status_code' field");
+    assert!(
+        json.get("status_code").is_some(),
+        "Missing 'status_code' field"
+    );
     assert_eq!(json["status_code"], 400);
 
     // 'type' should be a URI path

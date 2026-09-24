@@ -9,8 +9,8 @@ use axum::{
     },
     routing::post,
 };
-use std::sync::Arc;
 use serde::Deserialize;
+use std::sync::Arc;
 use tokio_stream::StreamExt as _;
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
@@ -62,10 +62,8 @@ async fn chat_handler(
     }
 
     if !CONCURRENCY.acquire() {
-        return ProblemDetails::service_unavailable(
-            "Server busy. Too many concurrent requests.",
-        )
-        .into_response();
+        return ProblemDetails::service_unavailable("Server busy. Too many concurrent requests.")
+            .into_response();
     }
 
     let ChatRequestBody {
@@ -101,8 +99,7 @@ async fn chat_handler(
     let last_msg = messages.last().unwrap();
     if last_msg.role != asi_ai_sdk::types::Role::User {
         CONCURRENCY.release();
-        return ProblemDetails::bad_request("Last message must have role 'user'")
-            .into_response();
+        return ProblemDetails::bad_request("Last message must have role 'user'").into_response();
     }
 
     if asi_lib::flags::flag("prompt-injection-defense") {
@@ -185,34 +182,36 @@ async fn chat_handler(
         Option<std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>>,
     ) = if let Ok(api_key) = std::env::var("DEEPSEEK_API_KEY") {
         let model = std::env::var("DEEPSEEK_MODEL").unwrap_or_else(|_| "deepseek-chat".into());
-        let primary = std::sync::Arc::new(
-            asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(api_key, model),
-        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
-        let ollama_url = std::env::var("OLLAMA_BASE_URL")
-            .unwrap_or_else(|_| "http://localhost:11434/v1".into());
+        let primary = std::sync::Arc::new(asi_ai_sdk::provider::deepseek::DeepSeekProvider::new(
+            api_key, model,
+        )) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        let ollama_url =
+            std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".into());
         let ollama_model =
             std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-        let fallback = std::sync::Arc::new(
-            asi_ai_sdk::provider::ollama::OllamaProvider::new(ollama_model, ollama_url),
-        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        let fallback = std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+            ollama_model,
+            ollama_url,
+        )) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
         (primary, Some(fallback))
     } else {
-        let ollama_url = std::env::var("OLLAMA_BASE_URL")
-            .unwrap_or_else(|_| "http://localhost:11434/v1".into());
+        let ollama_url =
+            std::env::var("OLLAMA_BASE_URL").unwrap_or_else(|_| "http://localhost:11434/v1".into());
         let ollama_model =
             std::env::var("OLLAMA_MODEL").unwrap_or_else(|_| "gemma4:31b-cloud".into());
-        let primary = std::sync::Arc::new(
-            asi_ai_sdk::provider::ollama::OllamaProvider::new(
-                ollama_model.clone(),
-                ollama_url.clone(),
-            ),
-        ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
-        let fallback_model = std::env::var("OLLAMA_FALLBACK_MODEL")
-            .unwrap_or_else(|_| "qwen3:4b".into());
+        let primary = std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+            ollama_model.clone(),
+            ollama_url.clone(),
+        )) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>;
+        let fallback_model =
+            std::env::var("OLLAMA_FALLBACK_MODEL").unwrap_or_else(|_| "qwen3:4b".into());
         let fallback = if fallback_model != ollama_model {
-            Some(std::sync::Arc::new(
-                asi_ai_sdk::provider::ollama::OllamaProvider::new(fallback_model, ollama_url),
-            ) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>)
+            Some(
+                std::sync::Arc::new(asi_ai_sdk::provider::ollama::OllamaProvider::new(
+                    fallback_model,
+                    ollama_url,
+                )) as std::sync::Arc<dyn asi_ai_sdk::provider::AiProvider>,
+            )
         } else {
             None
         };
@@ -239,19 +238,26 @@ async fn chat_handler(
         let tools = build_agent_tools();
         let deep_agent = asi_ai_sdk::agent::deep_agent::DeepAgent::new(provider, tools, 5);
         deep_agent
-            .execute(messages_clone.last().map(|m| m.content.as_str()).unwrap_or(""))
+            .execute(
+                messages_clone
+                    .last()
+                    .map(|m| m.content.as_str())
+                    .unwrap_or(""),
+            )
             .await
     } else if use_multi_agent {
-        asi_lib::logger::info("Routing to multi-agent coordinator", &[("user_id", &user_id)]);
+        asi_lib::logger::info(
+            "Routing to multi-agent coordinator",
+            &[("user_id", &user_id)],
+        );
         let code_agent = std::sync::Arc::new(build_code_agent(provider.clone()));
         let review_agent = std::sync::Arc::new(build_review_agent(provider.clone()));
         let memory = std::sync::Arc::new(asi_ai_sdk::agent::memory::AgentMemory::new(
             std::time::Duration::from_secs(3600),
             100,
         ));
-        let coordinator = asi_ai_sdk::agent::coordinator::Coordinator::new(
-            code_agent, review_agent, memory,
-        );
+        let coordinator =
+            asi_ai_sdk::agent::coordinator::Coordinator::new(code_agent, review_agent, memory);
         coordinator.execute(messages_clone).await
     } else if is_review {
         asi_lib::logger::info("Routing to review agent", &[("user_id", &user_id)]);

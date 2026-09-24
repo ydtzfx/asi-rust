@@ -14,11 +14,17 @@ pub struct CortexOptimizer {
 }
 
 impl Default for CortexOptimizer {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CortexOptimizer {
-    pub fn new() -> Self { Self { targets: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            targets: Vec::new(),
+        }
+    }
 
     /// Analyze the system and suggest optimizations.
     pub fn optimize(&mut self, analysis: &super::analyzer::Analysis) -> Vec<OptimizationTarget> {
@@ -54,14 +60,16 @@ impl CortexOptimizer {
     }
 
     /// Get the latest optimization targets.
-    pub fn targets(&self) -> &[OptimizationTarget] { &self.targets }
+    pub fn targets(&self) -> &[OptimizationTarget] {
+        &self.targets
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use super::super::monitor::CortexMonitor;
     use super::super::analyzer::CortexAnalyzer;
+    use super::super::monitor::CortexMonitor;
+    use super::*;
 
     #[test]
     fn test_healthy_system_optimization() {

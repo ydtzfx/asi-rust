@@ -141,7 +141,10 @@ impl DefenseInDepth {
         } else if total_breaches < 5 {
             format!("Minor — {} total breaches across layers", total_breaches)
         } else {
-            format!("Elevated — {} total breaches, review required", total_breaches)
+            format!(
+                "Elevated — {} total breaches, review required",
+                total_breaches
+            )
         }
     }
 }

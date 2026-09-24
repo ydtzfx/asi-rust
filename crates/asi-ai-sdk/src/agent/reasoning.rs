@@ -49,7 +49,8 @@ impl ChainOfThought {
                 messages: vec![
                     Message {
                         role: Role::System,
-                        content: "You are a reasoning engine. Think step by step. Be concise.".into(),
+                        content: "You are a reasoning engine. Think step by step. Be concise."
+                            .into(),
                         tool_calls: None,
                         tool_call_id: None,
                     },

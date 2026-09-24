@@ -62,7 +62,11 @@ impl ThreatDetector {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
                 category: "sql_injection".into(),
-                level: if count > 3 { ThreatLevel::High } else { ThreatLevel::Medium },
+                level: if count > 3 {
+                    ThreatLevel::High
+                } else {
+                    ThreatLevel::Medium
+                },
                 source_ip: Some(ip.to_string()),
                 description: "SQL injection pattern detected in request body".into(),
                 detected_at: now(),
@@ -89,7 +93,11 @@ impl ThreatDetector {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
                 category: "rate_anomaly".into(),
-                level: if ip_score > 500 { ThreatLevel::Critical } else { ThreatLevel::High },
+                level: if ip_score > 500 {
+                    ThreatLevel::Critical
+                } else {
+                    ThreatLevel::High
+                },
                 source_ip: Some(ip.to_string()),
                 description: format!("High request rate from IP: {} requests", ip_score),
                 detected_at: now(),

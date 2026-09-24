@@ -401,7 +401,11 @@ mod tests {
             .await;
         assert!(result.is_err());
         let err = result.unwrap_err().to_string();
-        assert!(err.contains("not allowed"), "Expected allowlist rejection, got: {}", err);
+        assert!(
+            err.contains("not allowed"),
+            "Expected allowlist rejection, got: {}",
+            err
+        );
 
         // Allowed subcommand should pass allowlist (may fail at execution)
         let result = tool

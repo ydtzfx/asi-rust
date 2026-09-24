@@ -46,16 +46,14 @@ impl AdaptiveFirewall {
         deny_list.insert("127.0.0.1: spoofing test".to_string());
 
         Self {
-            rules: Mutex::new(vec![
-                FirewallRule {
-                    id: "rule_default_allow".into(),
-                    pattern: "*".into(),
-                    rule_type: RuleType::PathBlock,
-                    action: RuleAction::Allow,
-                    hits: 0,
-                    learned: false,
-                },
-            ]),
+            rules: Mutex::new(vec![FirewallRule {
+                id: "rule_default_allow".into(),
+                pattern: "*".into(),
+                rule_type: RuleType::PathBlock,
+                action: RuleAction::Allow,
+                hits: 0,
+                learned: false,
+            }]),
             deny_list: Mutex::new(deny_list),
         }
     }
@@ -98,9 +96,7 @@ impl AdaptiveFirewall {
         for rule in rules.iter() {
             let matches = match rule.rule_type {
                 RuleType::IpBlock => rule.pattern == ip,
-                RuleType::PathBlock => {
-                    rule.pattern == "*" || path.contains(&rule.pattern)
-                }
+                RuleType::PathBlock => rule.pattern == "*" || path.contains(&rule.pattern),
                 RuleType::MethodBlock => rule.pattern == method,
                 RuleType::HeaderBlock => false, // Header rules require header inspection.
             };

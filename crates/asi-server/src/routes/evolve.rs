@@ -48,9 +48,7 @@ const EVOLVE_COMMAND_TIMEOUT: Duration = Duration::from_secs(300); // 5 min per 
 /// environment variable.  Rate-limited to 3 attempts per 5 minutes.
 /// On success, runs `cargo clippy` (lint) and `cargo test` in sequence
 /// with a 5-minute timeout per command.
-async fn evolve(
-    Json(body): Json<EvolveRequest>,
-) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
+async fn evolve(Json(body): Json<EvolveRequest>) -> Result<Json<Value>, (StatusCode, Json<Value>)> {
     // ---- Rate limit (brute-force protection) ----
     match EVOLVE_RATE_LIMITER.check("evolve", EVOLVE_RATE_MAX, EVOLVE_WINDOW_MS) {
         asi_lib::rate_limit::RateLimitResult::RetryAfter(ms) => {
@@ -158,7 +156,11 @@ async fn run_command_async(program: &str, args: &[&str]) -> CommandOutput {
         Err(_) => CommandOutput {
             success: false,
             stdout: String::new(),
-            stderr: format!("{} timed out after {}s", program, EVOLVE_COMMAND_TIMEOUT.as_secs()),
+            stderr: format!(
+                "{} timed out after {}s",
+                program,
+                EVOLVE_COMMAND_TIMEOUT.as_secs()
+            ),
         },
     }
 }

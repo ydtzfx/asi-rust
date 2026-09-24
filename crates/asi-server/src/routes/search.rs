@@ -49,7 +49,10 @@ async fn search_sessions(
 
     let pool = asi_db::get_db();
     // Escape SQL LIKE wildcards so `%` and `_` are matched literally.
-    let escaped = query.replace('\\', "\\\\").replace('%', "\\%").replace('_', "\\_");
+    let escaped = query
+        .replace('\\', "\\\\")
+        .replace('%', "\\%")
+        .replace('_', "\\_");
     let pattern = format!("%{}%", escaped);
 
     // Search across title, context_json, and (if provided) user_id

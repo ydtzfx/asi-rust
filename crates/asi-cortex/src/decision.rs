@@ -28,11 +28,15 @@ pub enum DecisionAction {
 pub struct CortexDecision;
 
 impl Default for CortexDecision {
-    fn default() -> Self { Self::new() }
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CortexDecision {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Make decisions based on current analysis and predictions.
     pub fn decide(&self, analysis: &Analysis, predictions: &[Prediction]) -> Vec<Decision> {
@@ -46,9 +50,15 @@ impl CortexDecision {
                 _ => DecisionAction::RunDiagnostics,
             };
             decisions.push(Decision {
-                id: format!("d_{}", { id += 1; id }),
+                id: format!("d_{}", {
+                    id += 1;
+                    id
+                }),
                 action,
-                reason: format!("{}: {} is {}", anomaly.subsystem, anomaly.metric, anomaly.value),
+                reason: format!(
+                    "{}: {} is {}",
+                    anomaly.subsystem, anomaly.metric, anomaly.value
+                ),
                 confidence: 0.9,
                 auto_execute: anomaly.severity == super::analyzer::AnomalySeverity::Critical,
             });
@@ -56,17 +66,28 @@ impl CortexDecision {
 
         // Act on predictions.
         for pred in predictions {
-            if pred.probability > 0.7 && pred.impact as u8 >= super::predictor::ImpactLevel::High as u8 {
+            if pred.probability > 0.7
+                && pred.impact as u8 >= super::predictor::ImpactLevel::High as u8
+            {
                 let action = match pred.subsystem.as_str() {
-                    "ai" => DecisionAction::SwitchModel { to: "fallback".into() },
+                    "ai" => DecisionAction::SwitchModel {
+                        to: "fallback".into(),
+                    },
                     "database" => DecisionAction::IncreasePool { new_size: 20 },
                     "server" => DecisionAction::RunDiagnostics,
                     _ => DecisionAction::NoAction,
                 };
                 decisions.push(Decision {
-                    id: format!("d_{}", { id += 1; id }),
+                    id: format!("d_{}", {
+                        id += 1;
+                        id
+                    }),
                     action,
-                    reason: format!("Predicted: {} ({}%)", pred.event, (pred.probability * 100.0) as u32),
+                    reason: format!(
+                        "Predicted: {} ({}%)",
+                        pred.event,
+                        (pred.probability * 100.0) as u32
+                    ),
                     confidence: pred.probability,
                     auto_execute: pred.impact == super::predictor::ImpactLevel::Critical,
                 });

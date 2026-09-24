@@ -68,11 +68,18 @@ impl AutonomousPipeline {
 
         if !review.approved {
             // Stage 2: Auto-Fix
-            tracing::info!("Pipeline Stage 2: Auto-Fix ({} fixable findings)", review.auto_fixable_count);
+            tracing::info!(
+                "Pipeline Stage 2: Auto-Fix ({} fixable findings)",
+                review.auto_fixable_count
+            );
             let fix_results = self.fixer.fix_all(&review);
             let fixes_applied = fix_results.iter().filter(|r| r.fixed).count();
             stages.push(PipelineStage::AutoFix);
-            summary.push_str(&format!("Auto-fix: {}/{} fixed\n", fixes_applied, fix_results.len()));
+            summary.push_str(&format!(
+                "Auto-fix: {}/{} fixed\n",
+                fixes_applied,
+                fix_results.len()
+            ));
 
             let all_fixed = self.fixer.all_blockers_fixed(&fix_results);
 
@@ -179,7 +186,11 @@ mod tests {
     async fn test_clean_pr_auto_merges() {
         let pipeline = AutonomousPipeline::new();
         let result = pipeline
-            .execute("fn add(a:i32,b:i32)->i32{a+b}", "feat: add function", "main")
+            .execute(
+                "fn add(a:i32,b:i32)->i32{a+b}",
+                "feat: add function",
+                "main",
+            )
             .await;
         assert!(result.success);
         assert!(result.merged);
@@ -200,7 +211,11 @@ mod tests {
     async fn test_full_pipeline_stages() {
         let pipeline = AutonomousPipeline::new();
         let result = pipeline
-            .execute("let x = val.unwrap();\nprintln!(\"debug\")", "feat: new feature", "main")
+            .execute(
+                "let x = val.unwrap();\nprintln!(\"debug\")",
+                "feat: new feature",
+                "main",
+            )
             .await;
         // Should go through Review → AutoFix → MergeGate → Deploy → Complete
         assert!(result.stages_completed.contains(&PipelineStage::Review));

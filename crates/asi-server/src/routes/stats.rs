@@ -24,17 +24,13 @@ async fn get_stats() -> Json<Value> {
         })
         .unwrap_or(0);
 
-    let token_usage: i64 =
-        sqlx::query_scalar("SELECT COALESCE(SUM(token_used), 0) FROM sessions")
-            .fetch_one(pool)
-            .await
-            .inspect_err(|e| {
-                asi_lib::logger::error(
-                    "stats: failed to sum tokens",
-                    &[("error", &e.to_string())],
-                );
-            })
-            .unwrap_or(0);
+    let token_usage: i64 = sqlx::query_scalar("SELECT COALESCE(SUM(token_used), 0) FROM sessions")
+        .fetch_one(pool)
+        .await
+        .inspect_err(|e| {
+            asi_lib::logger::error("stats: failed to sum tokens", &[("error", &e.to_string())]);
+        })
+        .unwrap_or(0);
 
     let project_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM projects")
         .fetch_one(pool)

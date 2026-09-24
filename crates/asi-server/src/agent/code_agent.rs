@@ -14,7 +14,10 @@ use super::tools::write_file::WriteFileTool;
 /// Build a ToolMap with the four standard agent tools.
 pub fn build_agent_tools() -> ToolMap {
     let mut tools: ToolMap = std::collections::HashMap::new();
-    tools.insert("readFile".into(), Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>);
+    tools.insert(
+        "readFile".into(),
+        Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>,
+    );
     tools.insert("writeFile".into(), Arc::new(WriteFileTool));
     tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
     tools.insert("runCommand".into(), Arc::new(RunCommandTool));

@@ -58,25 +58,33 @@ impl PrReviewer {
         let critical_or_major = findings
             .iter()
             .filter(|f| {
-                f.severity == FindingSeverity::Critical
-                    || f.severity == FindingSeverity::Major
+                f.severity == FindingSeverity::Critical || f.severity == FindingSeverity::Major
             })
             .count();
 
-        let auto_fixable = findings
-            .iter()
-            .filter(|f| f.suggestion.is_some())
-            .count();
+        let auto_fixable = findings.iter().filter(|f| f.suggestion.is_some()).count();
 
         ReviewResult {
             pr_title: pr_title.to_string(),
             summary: format!(
                 "{} findings: {} critical, {} major, {} minor, {} suggestions",
                 findings.len(),
-                findings.iter().filter(|f| f.severity == FindingSeverity::Critical).count(),
-                findings.iter().filter(|f| f.severity == FindingSeverity::Major).count(),
-                findings.iter().filter(|f| f.severity == FindingSeverity::Minor).count(),
-                findings.iter().filter(|f| f.severity == FindingSeverity::Suggestion).count(),
+                findings
+                    .iter()
+                    .filter(|f| f.severity == FindingSeverity::Critical)
+                    .count(),
+                findings
+                    .iter()
+                    .filter(|f| f.severity == FindingSeverity::Major)
+                    .count(),
+                findings
+                    .iter()
+                    .filter(|f| f.severity == FindingSeverity::Minor)
+                    .count(),
+                findings
+                    .iter()
+                    .filter(|f| f.severity == FindingSeverity::Suggestion)
+                    .count(),
             ),
             approved: critical_or_major == 0,
             auto_fixable_count: auto_fixable,

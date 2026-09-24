@@ -63,7 +63,10 @@ impl DeployVerifier {
         }
 
         // Health check failed — trigger rollback.
-        tracing::error!("Health check failed after {} attempts. Rolling back.", self.max_retries);
+        tracing::error!(
+            "Health check failed after {} attempts. Rolling back.",
+            self.max_retries
+        );
         self.rollback().await;
 
         DeployResult {

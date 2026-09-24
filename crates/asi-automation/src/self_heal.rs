@@ -25,10 +25,10 @@ pub struct SelfHealEngine {
     restart_count: AtomicU32,
 
     /// Thresholds for escalation.
-    fallback_threshold: u32,   // L1→L2
-    recovery_threshold: u32,   // L2→L3
-    restart_threshold: u32,    // L3→L4
-    rollback_threshold: u32,   // L4→L5
+    fallback_threshold: u32, // L1→L2
+    recovery_threshold: u32, // L2→L3
+    restart_threshold: u32,  // L3→L4
+    rollback_threshold: u32, // L4→L5
 }
 
 impl Default for SelfHealEngine {
@@ -80,8 +80,7 @@ impl SelfHealEngine {
 
     /// Assess the fault level based on consecutive failure count.
     fn assess(&self, count: u32) -> FaultLevel {
-        if count >= self.fallback_threshold + self.recovery_threshold + self.restart_threshold
-        {
+        if count >= self.fallback_threshold + self.recovery_threshold + self.restart_threshold {
             FaultLevel::Fatal
         } else if count >= self.fallback_threshold + self.recovery_threshold {
             FaultLevel::Critical

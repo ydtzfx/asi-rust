@@ -85,12 +85,14 @@ impl AbTestEngine {
         if rate_b > rate_a + 0.05 {
             Some(format!(
                 "Variant B wins (A: {:.1}%, B: {:.1}%, p<0.05)",
-                rate_a * 100.0, rate_b * 100.0
+                rate_a * 100.0,
+                rate_b * 100.0
             ))
         } else if rate_a > rate_b + 0.05 {
             Some(format!(
                 "Variant A wins (A: {:.1}%, B: {:.1}%, p<0.05)",
-                rate_a * 100.0, rate_b * 100.0
+                rate_a * 100.0,
+                rate_b * 100.0
             ))
         } else {
             Some("No significant difference".into())
@@ -112,7 +114,15 @@ impl AbTestEngine {
         let exps = self.experiments.lock().unwrap();
         exps.values()
             .filter(|e| e.active)
-            .map(|e| (e.id.clone(), e.trials_a, e.successes_a, e.trials_b, e.successes_b))
+            .map(|e| {
+                (
+                    e.id.clone(),
+                    e.trials_a,
+                    e.successes_a,
+                    e.trials_b,
+                    e.successes_b,
+                )
+            })
             .collect()
     }
 }
@@ -125,9 +135,18 @@ mod tests {
     fn test_ab_test_basic() {
         let engine = AbTestEngine::new();
         engine.create("prompt_v1", "Original prompt", "Improved prompt");
-        for _ in 0..10 { engine.record("prompt_v1", false, true); }
-        for _ in 0..10 { engine.record("prompt_v1", true, true); }
-        assert!(engine.winner("prompt_v1").unwrap().contains("No significant"));
+        for _ in 0..10 {
+            engine.record("prompt_v1", false, true);
+        }
+        for _ in 0..10 {
+            engine.record("prompt_v1", true, true);
+        }
+        assert!(
+            engine
+                .winner("prompt_v1")
+                .unwrap()
+                .contains("No significant")
+        );
         engine.record("prompt_v1", true, true);
         engine.record("prompt_v1", false, false);
         assert!(engine.winner("prompt_v1").is_some());

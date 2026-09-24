@@ -13,12 +13,12 @@ use std::sync::Arc;
 /// Stages of the deep agent execution cycle.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeepStage {
-    Plan,       // Analyze + decompose
-    Execute,    // Run tools + generate
-    Reflect,    // Self-assess quality
-    Revise,     // Improve based on reflection
-    Complete,   // Done — output meets quality bar
-    Abandoned,  // Max iterations reached without convergence
+    Plan,      // Analyze + decompose
+    Execute,   // Run tools + generate
+    Reflect,   // Self-assess quality
+    Revise,    // Improve based on reflection
+    Complete,  // Done — output meets quality bar
+    Abandoned, // Max iterations reached without convergence
 }
 
 /// Deep agent — iterative Plan-Execute-Reflect-Revise cycle.

@@ -11,7 +11,10 @@ pub struct GrpcConfig {
 
 impl Default for GrpcConfig {
     fn default() -> Self {
-        Self { host: "0.0.0.0".into(), port: 50051 }
+        Self {
+            host: "0.0.0.0".into(),
+            port: 50051,
+        }
     }
 }
 

@@ -49,7 +49,10 @@ async fn cmd_status() {
     // Health
     if let Ok(resp) = reqwest::get(format!("{}/api/health", base)).await {
         let json: serde_json::Value = resp.json().await.unwrap_or_default();
-        println!("  Server:  {}", status_icon(json["status"].as_str() == Some("ok")));
+        println!(
+            "  Server:  {}",
+            status_icon(json["status"].as_str() == Some("ok"))
+        );
     } else {
         println!("  Server:  ❌ DOWN");
     }
@@ -57,8 +60,14 @@ async fn cmd_status() {
     // Ready
     if let Ok(resp) = reqwest::get(format!("{}/api/ready", base)).await {
         let json: serde_json::Value = resp.json().await.unwrap_or_default();
-        println!("  DB:      {}", status_icon(json["database"].as_bool() == Some(true)));
-        println!("  AI:      {}", status_icon(json["ai_provider"].as_bool() == Some(true)));
+        println!(
+            "  DB:      {}",
+            status_icon(json["database"].as_bool() == Some(true))
+        );
+        println!(
+            "  AI:      {}",
+            status_icon(json["ai_provider"].as_bool() == Some(true))
+        );
     }
 
     // Version
@@ -78,7 +87,14 @@ async fn cmd_deploy() {
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
-    println!("     Tests: {}", if test_ok { "✅" } else { "❌ (continuing anyway)" });
+    println!(
+        "     Tests: {}",
+        if test_ok {
+            "✅"
+        } else {
+            "❌ (continuing anyway)"
+        }
+    );
 
     println!("  2. Building release...");
     let build_ok = process::Command::new("cargo")
@@ -87,18 +103,34 @@ async fn cmd_deploy() {
         .map(|s| s.success())
         .unwrap_or(false);
     println!("     Build: {}", if build_ok { "✅" } else { "❌ FAILED" });
-    if !build_ok { process::exit(1); }
+    if !build_ok {
+        process::exit(1);
+    }
 
     println!("  3. Deploying to Vercel...");
     let deploy = process::Command::new("npx")
         .args(["vercel", "deploy", "--prod", "--yes"])
         .status();
-    println!("     Deploy: {}", if deploy.map(|s| s.success()).unwrap_or(false) { "✅" } else { "⚠️  (manual check)" });
+    println!(
+        "     Deploy: {}",
+        if deploy.map(|s| s.success()).unwrap_or(false) {
+            "✅"
+        } else {
+            "⚠️  (manual check)"
+        }
+    );
 
     println!("\n  4. Verifying deployment...");
     tokio::time::sleep(std::time::Duration::from_secs(10)).await;
     if let Ok(resp) = reqwest::get(format!("{}/api/health", base_url())).await {
-        println!("     Health: {}", if resp.status().is_success() { "✅" } else { "❌" });
+        println!(
+            "     Health: {}",
+            if resp.status().is_success() {
+                "✅"
+            } else {
+                "❌"
+            }
+        );
     }
 
     println!("\n✅ Deploy complete!");
@@ -111,7 +143,10 @@ async fn cmd_monitor() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(10u64);
 
-    println!("ASI Monitor — refreshing every {}s (Ctrl+C to stop)\n", interval);
+    println!(
+        "ASI Monitor — refreshing every {}s (Ctrl+C to stop)\n",
+        interval
+    );
     loop {
         print!("\x1B[2J\x1B[H"); // Clear screen
         println!("═══ ASI Monitor ═══ {}\n", chrono_now());
@@ -119,8 +154,14 @@ async fn cmd_monitor() {
         if let Ok(resp) = reqwest::get(format!("{}/api/ready", base)).await {
             let json: serde_json::Value = resp.json().await.unwrap_or_default();
             println!("Server:  {}", status_icon(true));
-            println!("DB:      {}", status_icon(json["database"].as_bool() == Some(true)));
-            println!("AI:      {}", status_icon(json["ai_provider"].as_bool() == Some(true)));
+            println!(
+                "DB:      {}",
+                status_icon(json["database"].as_bool() == Some(true))
+            );
+            println!(
+                "AI:      {}",
+                status_icon(json["ai_provider"].as_bool() == Some(true))
+            );
         } else {
             println!("❌ Server unreachable!");
         }
