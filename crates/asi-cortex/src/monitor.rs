@@ -41,6 +41,12 @@ pub struct Metric {
 /// Cross-system monitor that collects state from all subsystems.
 pub struct CortexMonitor;
 
+impl Default for CortexMonitor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CortexMonitor {
     pub fn new() -> Self {
         Self
@@ -65,9 +71,27 @@ impl CortexMonitor {
             name: "asi-server".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "response_time_ms".into(), value: 5.0, unit: "ms".into(), threshold_warn: Some(100.0), threshold_crit: Some(500.0) },
-                Metric { key: "error_rate".into(), value: 0.001, unit: "ratio".into(), threshold_warn: Some(0.01), threshold_crit: Some(0.05) },
-                Metric { key: "request_rate".into(), value: 12.0, unit: "req/s".into(), threshold_warn: None, threshold_crit: None },
+                Metric {
+                    key: "response_time_ms".into(),
+                    value: 5.0,
+                    unit: "ms".into(),
+                    threshold_warn: Some(100.0),
+                    threshold_crit: Some(500.0),
+                },
+                Metric {
+                    key: "error_rate".into(),
+                    value: 0.001,
+                    unit: "ratio".into(),
+                    threshold_warn: Some(0.01),
+                    threshold_crit: Some(0.05),
+                },
+                Metric {
+                    key: "request_rate".into(),
+                    value: 12.0,
+                    unit: "req/s".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
             ],
             alerts: vec![],
         }
@@ -78,9 +102,27 @@ impl CortexMonitor {
             name: "asi-db".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "pool_active".into(), value: 2.0, unit: "connections".into(), threshold_warn: Some(8.0), threshold_crit: Some(10.0) },
-                Metric { key: "pool_idle".into(), value: 8.0, unit: "connections".into(), threshold_warn: None, threshold_crit: None },
-                Metric { key: "sessions_total".into(), value: 42.0, unit: "count".into(), threshold_warn: None, threshold_crit: None },
+                Metric {
+                    key: "pool_active".into(),
+                    value: 2.0,
+                    unit: "connections".into(),
+                    threshold_warn: Some(8.0),
+                    threshold_crit: Some(10.0),
+                },
+                Metric {
+                    key: "pool_idle".into(),
+                    value: 8.0,
+                    unit: "connections".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
+                Metric {
+                    key: "sessions_total".into(),
+                    value: 42.0,
+                    unit: "count".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
             ],
             alerts: vec![],
         }
@@ -91,9 +133,27 @@ impl CortexMonitor {
             name: "asi-ai-sdk".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "provider_latency".into(), value: 1200.0, unit: "ms".into(), threshold_warn: Some(5000.0), threshold_crit: Some(30000.0) },
-                Metric { key: "cache_hit_rate".into(), value: 0.15, unit: "ratio".into(), threshold_warn: None, threshold_crit: None },
-                Metric { key: "fallback_triggered".into(), value: 0.0, unit: "count".into(), threshold_warn: Some(3.0), threshold_crit: Some(10.0) },
+                Metric {
+                    key: "provider_latency".into(),
+                    value: 1200.0,
+                    unit: "ms".into(),
+                    threshold_warn: Some(5000.0),
+                    threshold_crit: Some(30000.0),
+                },
+                Metric {
+                    key: "cache_hit_rate".into(),
+                    value: 0.15,
+                    unit: "ratio".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
+                Metric {
+                    key: "fallback_triggered".into(),
+                    value: 0.0,
+                    unit: "count".into(),
+                    threshold_warn: Some(3.0),
+                    threshold_crit: Some(10.0),
+                },
             ],
             alerts: vec![],
         }
@@ -104,9 +164,27 @@ impl CortexMonitor {
             name: "asi-automation".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "watchdog_alive".into(), value: 1.0, unit: "bool".into(), threshold_warn: None, threshold_crit: Some(0.0) },
-                Metric { key: "restarts".into(), value: 0.0, unit: "count".into(), threshold_warn: Some(2.0), threshold_crit: Some(5.0) },
-                Metric { key: "db_failures".into(), value: 0.0, unit: "count".into(), threshold_warn: Some(2.0), threshold_crit: Some(5.0) },
+                Metric {
+                    key: "watchdog_alive".into(),
+                    value: 1.0,
+                    unit: "bool".into(),
+                    threshold_warn: None,
+                    threshold_crit: Some(0.0),
+                },
+                Metric {
+                    key: "restarts".into(),
+                    value: 0.0,
+                    unit: "count".into(),
+                    threshold_warn: Some(2.0),
+                    threshold_crit: Some(5.0),
+                },
+                Metric {
+                    key: "db_failures".into(),
+                    value: 0.0,
+                    unit: "count".into(),
+                    threshold_warn: Some(2.0),
+                    threshold_crit: Some(5.0),
+                },
             ],
             alerts: vec![],
         }
@@ -117,9 +195,27 @@ impl CortexMonitor {
             name: "asi-security".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "threats_detected".into(), value: 0.0, unit: "count/h".into(), threshold_warn: Some(5.0), threshold_crit: Some(20.0) },
-                Metric { key: "rate_limits_hit".into(), value: 3.0, unit: "count/h".into(), threshold_warn: Some(50.0), threshold_crit: Some(200.0) },
-                Metric { key: "auth_failures".into(), value: 1.0, unit: "count/h".into(), threshold_warn: Some(10.0), threshold_crit: Some(50.0) },
+                Metric {
+                    key: "threats_detected".into(),
+                    value: 0.0,
+                    unit: "count/h".into(),
+                    threshold_warn: Some(5.0),
+                    threshold_crit: Some(20.0),
+                },
+                Metric {
+                    key: "rate_limits_hit".into(),
+                    value: 3.0,
+                    unit: "count/h".into(),
+                    threshold_warn: Some(50.0),
+                    threshold_crit: Some(200.0),
+                },
+                Metric {
+                    key: "auth_failures".into(),
+                    value: 1.0,
+                    unit: "count/h".into(),
+                    threshold_warn: Some(10.0),
+                    threshold_crit: Some(50.0),
+                },
             ],
             alerts: vec![],
         }
@@ -130,9 +226,27 @@ impl CortexMonitor {
             name: "asi-evolution".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "prompt_variants".into(), value: 5.0, unit: "count".into(), threshold_warn: None, threshold_crit: None },
-                Metric { key: "knowledge_entries".into(), value: 23.0, unit: "count".into(), threshold_warn: None, threshold_crit: None },
-                Metric { key: "ab_experiments".into(), value: 2.0, unit: "count".into(), threshold_warn: None, threshold_crit: None },
+                Metric {
+                    key: "prompt_variants".into(),
+                    value: 5.0,
+                    unit: "count".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
+                Metric {
+                    key: "knowledge_entries".into(),
+                    value: 23.0,
+                    unit: "count".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
+                Metric {
+                    key: "ab_experiments".into(),
+                    value: 2.0,
+                    unit: "count".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
             ],
             alerts: vec![],
         }
@@ -143,9 +257,27 @@ impl CortexMonitor {
             name: "asi-devops".into(),
             status: HealthStatus::Healthy,
             metrics: vec![
-                Metric { key: "deploy_success_rate".into(), value: 1.0, unit: "ratio".into(), threshold_warn: Some(0.9), threshold_crit: Some(0.7) },
-                Metric { key: "auto_merge_rate".into(), value: 0.8, unit: "ratio".into(), threshold_warn: None, threshold_crit: None },
-                Metric { key: "rollback_count".into(), value: 0.0, unit: "count".into(), threshold_warn: Some(2.0), threshold_crit: Some(5.0) },
+                Metric {
+                    key: "deploy_success_rate".into(),
+                    value: 1.0,
+                    unit: "ratio".into(),
+                    threshold_warn: Some(0.9),
+                    threshold_crit: Some(0.7),
+                },
+                Metric {
+                    key: "auto_merge_rate".into(),
+                    value: 0.8,
+                    unit: "ratio".into(),
+                    threshold_warn: None,
+                    threshold_crit: None,
+                },
+                Metric {
+                    key: "rollback_count".into(),
+                    value: 0.0,
+                    unit: "count".into(),
+                    threshold_warn: Some(2.0),
+                    threshold_crit: Some(5.0),
+                },
             ],
             alerts: vec![],
         }
@@ -153,5 +285,8 @@ impl CortexMonitor {
 }
 
 fn now() -> u64 {
-    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs()
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
 }

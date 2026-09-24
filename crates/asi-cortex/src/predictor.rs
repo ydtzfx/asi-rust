@@ -10,15 +10,30 @@ pub struct Prediction {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ImpactLevel { Low, Medium, High, Critical }
+pub enum ImpactLevel {
+    Low,
+    Medium,
+    High,
+    Critical,
+}
 
 /// Predictive engine — forecasts issues before they occur.
 pub struct CortexPredictor {
     history: Vec<super::monitor::SystemSnapshot>,
 }
 
+impl Default for CortexPredictor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CortexPredictor {
-    pub fn new() -> Self { Self { history: Vec::new() } }
+    pub fn new() -> Self {
+        Self {
+            history: Vec::new(),
+        }
+    }
 
     /// Feed a snapshot into the predictor.
     pub fn feed(&mut self, snapshot: super::monitor::SystemSnapshot) {
@@ -31,17 +46,25 @@ impl CortexPredictor {
     /// Predict issues based on trend analysis.
     pub fn predict(&self) -> Vec<Prediction> {
         let mut predictions = Vec::new();
-
         if self.history.len() < 3 {
-            return predictions; // Not enough data.
+            return predictions;
         }
-
-        // Detect rising trends.
         let recent = &self.history[self.history.len() - 3..];
 
-        // Check if error rate is increasing.
-        let first_err = recent[0].server.metrics.iter().find(|m| m.key == "error_rate").map(|m| m.value).unwrap_or(0.0);
-        let last_err = recent[2].server.metrics.iter().find(|m| m.key == "error_rate").map(|m| m.value).unwrap_or(0.0);
+        let first_err = recent[0]
+            .server
+            .metrics
+            .iter()
+            .find(|m| m.key == "error_rate")
+            .map(|m| m.value)
+            .unwrap_or(0.0);
+        let last_err = recent[2]
+            .server
+            .metrics
+            .iter()
+            .find(|m| m.key == "error_rate")
+            .map(|m| m.value)
+            .unwrap_or(0.0);
         if last_err > first_err * 2.0 {
             predictions.push(Prediction {
                 subsystem: "server".into(),
@@ -53,8 +76,13 @@ impl CortexPredictor {
             });
         }
 
-        // Check if DB pool is approaching max.
-        let pool = recent[2].database.metrics.iter().find(|m| m.key == "pool_active").map(|m| m.value).unwrap_or(0.0);
+        let pool = recent[2]
+            .database
+            .metrics
+            .iter()
+            .find(|m| m.key == "pool_active")
+            .map(|m| m.value)
+            .unwrap_or(0.0);
         if pool > 7.0 {
             predictions.push(Prediction {
                 subsystem: "database".into(),
@@ -66,9 +94,20 @@ impl CortexPredictor {
             });
         }
 
-        // Check provider latency trend.
-        let first_lat = recent[0].ai_provider.metrics.iter().find(|m| m.key == "provider_latency").map(|m| m.value).unwrap_or(0.0);
-        let last_lat = recent[2].ai_provider.metrics.iter().find(|m| m.key == "provider_latency").map(|m| m.value).unwrap_or(0.0);
+        let first_lat = recent[0]
+            .ai_provider
+            .metrics
+            .iter()
+            .find(|m| m.key == "provider_latency")
+            .map(|m| m.value)
+            .unwrap_or(0.0);
+        let last_lat = recent[2]
+            .ai_provider
+            .metrics
+            .iter()
+            .find(|m| m.key == "provider_latency")
+            .map(|m| m.value)
+            .unwrap_or(0.0);
         if last_lat > first_lat * 3.0 && last_lat > 5000.0 {
             predictions.push(Prediction {
                 subsystem: "ai".into(),
@@ -86,8 +125,8 @@ impl CortexPredictor {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::monitor::CortexMonitor;
+    use super::*;
 
     #[test]
     fn test_not_enough_data() {
@@ -102,9 +141,7 @@ mod tests {
         for _ in 0..5 {
             predictor.feed(monitor.snapshot());
         }
-        // With stable data, predictions should be minimal.
         let preds = predictor.predict();
-        // At minimum, no critical predictions on stable system.
         assert!(preds.iter().all(|p| p.impact != ImpactLevel::Critical));
     }
 }

@@ -14,7 +14,10 @@ use super::tools::write_file::WriteFileTool;
 /// Build a ToolMap with the four standard agent tools.
 pub fn build_agent_tools() -> ToolMap {
     let mut tools: ToolMap = std::collections::HashMap::new();
-    tools.insert("readFile".into(), Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>);
+    tools.insert(
+        "readFile".into(),
+        Arc::new(ReadFileTool) as Arc<dyn asi_ai_sdk::agent::tool::Tool>,
+    );
     tools.insert("writeFile".into(), Arc::new(WriteFileTool));
     tools.insert("listDirectory".into(), Arc::new(ListDirectoryTool));
     tools.insert("runCommand".into(), Arc::new(RunCommandTool));
@@ -85,6 +88,7 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_default() {
+        let _guard = super::super::config::FLAG_TEST_LOCK.lock().unwrap();
         asi_lib::flags::reset_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
         let agent = build_code_agent(provider);
@@ -96,15 +100,12 @@ mod tests {
 
     #[test]
     fn test_build_code_agent_read_only() {
+        let _guard = super::super::config::FLAG_TEST_LOCK.lock().unwrap();
         asi_lib::flags::reset_flag("read-only-mode");
         asi_lib::flags::set_flag("read-only-mode");
         let provider: Arc<dyn AiProvider> = Arc::new(TestProvider);
         let agent = build_code_agent(provider);
-        assert!(
-            agent.max_steps() == 5 || agent.max_steps() == 20,
-            "Agent step count should be 5 (read-only) or 20 (normal), got {}",
-            agent.max_steps()
-        );
+        assert_eq!(agent.max_steps(), 5);
         asi_lib::flags::reset_flag("read-only-mode");
     }
 }

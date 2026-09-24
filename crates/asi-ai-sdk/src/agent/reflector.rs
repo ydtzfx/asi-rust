@@ -23,11 +23,7 @@ impl Reflector {
 
     /// Reflect on the quality of an agent's output.
     /// Returns a score and optionally an improved version.
-    pub async fn reflect(
-        &self,
-        task: &str,
-        output: &str,
-    ) -> Result<ReflectionResult, String> {
+    pub async fn reflect(&self, task: &str, output: &str) -> Result<ReflectionResult, String> {
         let prompt = format!(
             "Review this AI agent output for the task: \"{}\"\n\n\
              Output:\n{}\n\n\
@@ -63,12 +59,10 @@ impl Reflector {
             .map(|c| c.message.content.clone())
             .unwrap_or_default();
 
-        // Parse JSON response (best-effort).
         Self::parse_reflection(&content)
     }
 
     fn parse_reflection(json_str: &str) -> Result<ReflectionResult, String> {
-        // Extract JSON from potential markdown wrapping.
         let json = json_str
             .trim()
             .trim_start_matches("```json")
@@ -80,7 +74,11 @@ impl Reflector {
             let score = val["score"].as_u64().unwrap_or(5) as u8;
             let issues: Vec<String> = val["issues"]
                 .as_array()
-                .map(|a| a.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                        .collect()
+                })
                 .unwrap_or_default();
             let improved = val["improved"]
                 .as_str()
@@ -94,7 +92,6 @@ impl Reflector {
                 improved_output: improved,
             })
         } else {
-            // If JSON parsing fails, assume acceptable.
             Ok(ReflectionResult {
                 is_acceptable: true,
                 score: 5,
@@ -105,20 +102,17 @@ impl Reflector {
     }
 
     /// Reflect and auto-improve: if score < 7, returns the improved version.
-    pub async fn reflect_and_improve(
-        &self,
-        task: &str,
-        output: &str,
-    ) -> Result<String, String> {
+    pub async fn reflect_and_improve(&self, task: &str, output: &str) -> Result<String, String> {
         let reflection = self.reflect(task, output).await?;
-        if let Some(improved) = reflection.improved_output {
-            if !improved.is_empty() && reflection.score < 7 {
-                tracing::info!(
-                    "Self-reflection: score={}/10, auto-improving output",
-                    reflection.score
-                );
-                return Ok(improved);
-            }
+        if let Some(improved) = reflection.improved_output
+            && !improved.is_empty()
+            && reflection.score < 7
+        {
+            tracing::info!(
+                "Self-reflection: score={}/10, auto-improving output",
+                reflection.score
+            );
+            return Ok(improved);
         }
         Ok(output.to_string())
     }

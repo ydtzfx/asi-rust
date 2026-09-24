@@ -31,6 +31,12 @@ pub struct ThreatDetector {
     pattern_counts: Mutex<HashMap<String, u64>>,
 }
 
+impl Default for ThreatDetector {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ThreatDetector {
     pub fn new() -> Self {
         Self {
@@ -56,7 +62,11 @@ impl ThreatDetector {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
                 category: "sql_injection".into(),
-                level: if count > 3 { ThreatLevel::High } else { ThreatLevel::Medium },
+                level: if count > 3 {
+                    ThreatLevel::High
+                } else {
+                    ThreatLevel::Medium
+                },
                 source_ip: Some(ip.to_string()),
                 description: "SQL injection pattern detected in request body".into(),
                 detected_at: now(),
@@ -83,7 +93,11 @@ impl ThreatDetector {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
                 category: "rate_anomaly".into(),
-                level: if ip_score > 500 { ThreatLevel::Critical } else { ThreatLevel::High },
+                level: if ip_score > 500 {
+                    ThreatLevel::Critical
+                } else {
+                    ThreatLevel::High
+                },
                 source_ip: Some(ip.to_string()),
                 description: format!("High request rate from IP: {} requests", ip_score),
                 detected_at: now(),
@@ -92,8 +106,9 @@ impl ThreatDetector {
         }
 
         // Check for suspicious headers.
-        if headers.contains_key("x-forwarded-for")
-            && headers.get("x-forwarded-for").map_or(false, |v| v.contains(','))
+        if headers
+            .get("x-forwarded-for")
+            .is_some_and(|v| v.contains(','))
         {
             threats.push(Threat {
                 id: format!("threat_{}", now()),
@@ -133,7 +148,7 @@ impl ThreatDetector {
     pub fn recent(&self, limit: usize) -> Vec<Threat> {
         let store = self.threats.lock().unwrap();
         let mut threats = store.clone();
-        threats.sort_by(|a, b| b.detected_at.cmp(&a.detected_at));
+        threats.sort_by_key(|threat| std::cmp::Reverse(threat.detected_at));
         threats.truncate(limit);
         threats
     }

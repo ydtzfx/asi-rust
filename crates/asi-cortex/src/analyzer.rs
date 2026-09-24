@@ -20,13 +20,24 @@ pub struct Anomaly {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum AnomalySeverity { Warning, Critical }
+pub enum AnomalySeverity {
+    Warning,
+    Critical,
+}
 
 /// Cross-system analyzer — finds correlations and anomalies.
 pub struct CortexAnalyzer;
 
+impl Default for CortexAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CortexAnalyzer {
-    pub fn new() -> Self { Self }
+    pub fn new() -> Self {
+        Self
+    }
 
     /// Analyze a system snapshot and produce insights.
     pub fn analyze(&self, snapshot: &SystemSnapshot) -> Analysis {
@@ -48,36 +59,47 @@ impl CortexAnalyzer {
                 degraded.push(name.to_string());
             }
             for metric in &health.metrics {
-                if let Some(crit) = metric.threshold_crit {
-                    if metric.value > crit {
-                        anomalies.push(Anomaly {
-                            subsystem: name.to_string(),
-                            metric: metric.key.clone(),
-                            value: metric.value,
-                            expected: format!("< {}", crit),
-                            severity: AnomalySeverity::Critical,
-                        });
-                    }
+                if let Some(crit) = metric.threshold_crit
+                    && metric.value > crit
+                {
+                    anomalies.push(Anomaly {
+                        subsystem: name.to_string(),
+                        metric: metric.key.clone(),
+                        value: metric.value,
+                        expected: format!("< {}", crit),
+                        severity: AnomalySeverity::Critical,
+                    });
                 }
-                if let Some(warn) = metric.threshold_warn {
-                    if metric.value > warn {
-                        recommendations.push(format!(
-                            "{}: {} is {}{} (threshold: {})",
-                            name, metric.key, metric.value, metric.unit, warn
-                        ));
-                    }
+                if let Some(warn) = metric.threshold_warn
+                    && metric.value > warn
+                {
+                    recommendations.push(format!(
+                        "{}: {} is {}{} (threshold: {})",
+                        name, metric.key, metric.value, metric.unit, warn
+                    ));
                 }
             }
         }
 
-        let score = if degraded.is_empty() && anomalies.is_empty() { 100 }
-            else if anomalies.iter().any(|a| a.severity == AnomalySeverity::Critical) { 50 }
-            else { 75 };
+        let score = if degraded.is_empty() && anomalies.is_empty() {
+            100
+        } else if anomalies
+            .iter()
+            .any(|a| a.severity == AnomalySeverity::Critical)
+        {
+            50
+        } else {
+            75
+        };
 
         Analysis {
-            overall_health: if degraded.is_empty() { HealthStatus::Healthy }
-                else if degraded.len() < 3 { HealthStatus::Degraded }
-                else { HealthStatus::Down },
+            overall_health: if degraded.is_empty() {
+                HealthStatus::Healthy
+            } else if degraded.len() < 3 {
+                HealthStatus::Degraded
+            } else {
+                HealthStatus::Down
+            },
             degraded_subsystems: degraded,
             anomalies,
             recommendations,

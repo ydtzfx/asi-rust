@@ -70,13 +70,13 @@ pub async fn verify_clerk_jwt(token: &str) -> Result<AuthenticatedUser, AuthErro
     let header = decode_header(token).map_err(|e| AuthError::InvalidToken(e.to_string()))?;
 
     // Validate JWT type and algorithm before processing.
-    if let Some(ref typ) = header.typ {
-        if typ.to_uppercase() != "JWT" {
-            return Err(AuthError::InvalidToken(format!(
-                "Invalid token type: expected JWT, got {}",
-                typ
-            )));
-        }
+    if let Some(ref typ) = header.typ
+        && typ.to_uppercase() != "JWT"
+    {
+        return Err(AuthError::InvalidToken(format!(
+            "Invalid token type: expected JWT, got {}",
+            typ
+        )));
     }
     if header.alg != Algorithm::RS256 {
         return Err(AuthError::InvalidToken(format!(

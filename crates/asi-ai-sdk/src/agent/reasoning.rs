@@ -25,7 +25,7 @@ impl ChainOfThought {
     /// Returns the final answer after multiple reasoning steps.
     pub async fn reason(&self, problem: &str, max_steps: usize) -> Result<String, String> {
         let mut steps: Vec<ReasoningStep> = Vec::new();
-        let mut current_question = problem.to_string();
+        let current_question = problem.to_string();
 
         for i in 0..max_steps {
             let prompt = if i == 0 {
@@ -36,7 +36,11 @@ impl ChainOfThought {
             } else {
                 format!(
                     "Previous reasoning:\n{}\n\nBased on this, what is the next step? If you have the final answer, start your response with ANSWER:",
-                    steps.iter().map(|s| format!("- {}", s.thought)).collect::<Vec<_>>().join("\n")
+                    steps
+                        .iter()
+                        .map(|s| format!("- {}", s.thought))
+                        .collect::<Vec<_>>()
+                        .join("\n")
                 )
             };
 
@@ -45,7 +49,8 @@ impl ChainOfThought {
                 messages: vec![
                     Message {
                         role: Role::System,
-                        content: "You are a reasoning engine. Think step by step. Be concise.".into(),
+                        content: "You are a reasoning engine. Think step by step. Be concise."
+                            .into(),
                         tool_calls: None,
                         tool_call_id: None,
                     },

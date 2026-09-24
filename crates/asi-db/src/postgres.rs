@@ -1,8 +1,8 @@
 //! PostgreSQL adapter — alternative backend for production deployments.
 //! Activated via DATABASE_URL starting with "postgres://".
 
-use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 use sqlx::PgPool;
+use sqlx::postgres::{PgConnectOptions, PgPoolOptions};
 
 /// Initialize a PostgreSQL pool.
 /// Called when DATABASE_URL starts with "postgres://" or "postgresql://".
