@@ -21,6 +21,11 @@ pub struct HookSpec { pub event: String, pub endpoint: String }
 pub struct PluginRegistry {
     plugins: std::sync::Mutex<Vec<PluginManifest>>,
 }
+impl Default for PluginRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 impl PluginRegistry {
     pub fn new() -> Self { Self { plugins: std::sync::Mutex::new(Vec::new()) } }
     pub fn register(&self, plugin: PluginManifest) { self.plugins.lock().unwrap().push(plugin); }
