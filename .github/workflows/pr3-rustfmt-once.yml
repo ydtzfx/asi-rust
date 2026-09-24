@@ -1,0 +1,40 @@
+name: PR3 One-time Rustfmt
+
+on:
+  push:
+    branches:
+      - fix/asi-ai-sdk-ci-warnings
+
+permissions:
+  contents: write
+
+concurrency:
+  group: one-time-rustfmt-pr3
+  cancel-in-progress: false
+
+jobs:
+  format:
+    if: github.repository == 'ydtzfx/asi-rust' && github.ref == 'refs/heads/fix/asi-ai-sdk-ci-warnings'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.96'
+          components: rustfmt
+      - name: Apply workspace rustfmt
+        run: cargo fmt --all
+      - name: Commit formatted Rust sources to PR branch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -u -- '*.rs'
+          if git diff --cached --quiet; then
+            echo 'No workspace formatting changes'
+            exit 0
+          fi
+          git commit -m 'style: apply rustfmt workspace baseline'
+          git push origin HEAD:refs/heads/fix/asi-ai-sdk-ci-warnings
