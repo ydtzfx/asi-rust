@@ -35,13 +35,20 @@ pub struct EventBus {
     handlers: std::sync::Mutex<Vec<Arc<dyn EventHandler>>>,
     store: std::sync::Mutex<Vec<DomainEvent>>,
 }
+impl Default for EventBus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl EventBus {
     pub fn new() -> Self { Self { handlers: std::sync::Mutex::new(Vec::new()), store: std::sync::Mutex::new(Vec::new()) } }
     pub fn subscribe(&self, handler: Arc<dyn EventHandler>) { self.handlers.lock().unwrap().push(handler); }
     pub async fn publish(&self, event: DomainEvent) {
         self.store.lock().unwrap().push(event.clone());
-        let handlers = self.handlers.lock().unwrap();
-        for h in handlers.iter() {
+        // Clone the Arc handles before dispatch so no MutexGuard is held across await.
+        let handlers = { self.handlers.lock().unwrap().clone() };
+        for h in &handlers {
             if h.subscribed_to().contains(&event.event_type) { h.handle(&event).await; }
         }
     }
