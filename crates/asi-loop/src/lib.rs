@@ -65,6 +65,12 @@ pub struct ClosedLoop {
     iteration_count: std::sync::atomic::AtomicU64,
 }
 
+impl Default for ClosedLoop {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ClosedLoop {
     pub fn new() -> Self {
         Self { iterations: std::sync::Mutex::new(Vec::new()), iteration_count: std::sync::atomic::AtomicU64::new(0) }
