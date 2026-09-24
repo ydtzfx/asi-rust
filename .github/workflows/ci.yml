@@ -43,7 +43,7 @@ jobs:
 
       - name: Test count check
         run: |
-          COUNT=$(cargo test --workspace -- --list 2>/dev/null | grep -c "test " || echo "0")
+          COUNT=$(cargo test --workspace -- --list | awk '/: test$/ { n++ } END { print n+0 }')
           echo "Test count: $COUNT"
           if [ "$COUNT" -lt 200 ]; then
             echo "ERROR: fewer than 200 tests found ($COUNT). Coverage gate failed."
