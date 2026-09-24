@@ -18,6 +18,21 @@ Default priorities: solve current problem > systematize > long-term evolution.
 For financial/security/automation tasks, always include risk controls, rollback, audit.
 Actively question assumptions and propose better alternatives.
 
+### AIS Specialist Subagents
+
+Use the six project-scoped definitions in `.claude/agents/` when substantive,
+independent work warrants delegation: `planner`, `rust-engineer`,
+`ci-diagnostician`, `verifier`, `reviewer`, and `security-auditor`.
+Read `docs/AGENT_OPERATING_MODEL.md` for the scope and task handoff contract.
+For single-file exploration, work directly rather than spawning an agent.
+
+Delegate writable changes only to `rust-engineer` in an isolated worktree;
+run independent review and verification before integrating its result.
+Never interpret project auto-approval as permission to bypass platform
+controls, protected branches, strict CI or an exact-HEAD merge gate.
+These are Claude Code *development* agents, not additional executors
+installed in the Rust product runtime.
+
 ### Self-Evolution Protocol
 
 1. **Proactive upgrades** — when goals, architecture, or execution can be improved, propose upgrades immediately.
