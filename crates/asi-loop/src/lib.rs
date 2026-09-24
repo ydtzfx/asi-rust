@@ -192,6 +192,6 @@ mod tests {
         let cl = Arc::new(ClosedLoop::new());
         ClosedLoop::start_continuous(cl.clone(), 1);
         tokio::time::sleep(Duration::from_secs(2)).await;
-        assert!(cl.recent(1).len() >= 1);
+        assert!(!cl.recent(1).is_empty());
     }
 }
