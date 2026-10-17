@@ -10,6 +10,7 @@
 //! provider/       — AI providers (Ollama, DeepSeek, Fallback)
 //! types.rs        — Chat API types (Message, ChatRequest, StreamChunk)
 //! token.rs        — Token counting utilities
+//! protocol_v1_1.rs — isolated Agent Protocol v1.1 behavioral adapter
 //! ```
 //!
 //! ## Stability
@@ -18,6 +19,7 @@
 //! Agent modules are **evolving** — APIs may change across minor versions.
 
 pub mod agent;
+pub mod protocol_v1_1;
 pub mod provider;
 pub mod token;
 pub mod types;
