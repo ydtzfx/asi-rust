@@ -19,13 +19,7 @@ jobs:
           toolchain: "1.96"
           components: rustfmt
       - name: Apply compiler fix
-        run: python - <<'PY'
-          from pathlib import Path
-          path = Path('crates/asi-ai-sdk/src/protocol_v1_1.rs')
-          text = path.read_text()
-          text = text.replace('object.entry("error".into())', 'object.entry("error")')
-          path.write_text(text)
-          PY
+        run: python -c "from pathlib import Path; p=Path('crates/asi-ai-sdk/src/protocol_v1_1.rs'); t=p.read_text(); p.write_text(t.replace('object.entry(\"error\".into())', 'object.entry(\"error\")'))"
       - name: Format and update lockfile
         run: |
           cargo fmt --all
