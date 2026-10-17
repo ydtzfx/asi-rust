@@ -15,3 +15,4 @@ reqwest = { version = "0.12", features = ["json", "stream"] }
 axum = "0.7"
 tokio-stream = "0.1"
 futures-core = "0.3"
+sha2 = "0.10"
