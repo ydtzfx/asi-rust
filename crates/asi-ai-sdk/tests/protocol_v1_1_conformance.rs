@@ -5,8 +5,9 @@ use std::{env, fs};
 fn vector(case_id: &str) -> Value {
     let path = env::var("AGENT_PROTOCOL_VECTORS")
         .expect("AGENT_PROTOCOL_VECTORS must point to agi-platform canonical vectors");
-    let document: Value = serde_json::from_str(&fs::read_to_string(path).expect("read vector file"))
-        .expect("parse vector file");
+    let document: Value =
+        serde_json::from_str(&fs::read_to_string(path).expect("read vector file"))
+            .expect("parse vector file");
     assert_eq!(document["protocol_version"], "1.1");
     document["cases"]
         .as_array()
@@ -92,9 +93,11 @@ fn run(case_id: &str) {
         }
         "C009" => {
             let event = protocol::build_redacted_audit_event(input);
-            assert!(!serde_json::to_string(&event)
-                .unwrap()
-                .contains(expected["secret_absent"].as_str().unwrap()));
+            assert!(
+                !serde_json::to_string(&event)
+                    .unwrap()
+                    .contains(expected["secret_absent"].as_str().unwrap())
+            );
             assert_eq!(event["redacted_fields"], expected["redacted_fields"]);
             assert_eq!(event["input_digest"], expected["input_digest"]);
         }
@@ -112,8 +115,8 @@ fn run(case_id: &str) {
             );
         }
         "C011" => {
-            let mut budget = protocol::StepBudget::new(input["limit"].as_u64().unwrap() as usize)
-                .unwrap();
+            let mut budget =
+                protocol::StepBudget::new(input["limit"].as_u64().unwrap() as usize).unwrap();
             let mut result = Value::Null;
             for _ in 0..input["attempts"].as_u64().unwrap() {
                 result = budget.consume();
@@ -149,11 +152,9 @@ fn run(case_id: &str) {
             assert_eq!(effects, expected["effects"].as_u64().unwrap());
         }
         "C014" => {
-            let result = protocol::enter_recovery(
-                &input["operation"],
-                input["now"].as_str().unwrap(),
-            )
-            .unwrap();
+            let result =
+                protocol::enter_recovery(&input["operation"], input["now"].as_str().unwrap())
+                    .unwrap();
             assert_eq!(result["status"], expected["status"]);
             assert_eq!(result["attempt"], expected["attempt"]);
             assert_eq!(result["recovery"]["strategy"], expected["strategy"]);
@@ -169,14 +170,10 @@ fn run(case_id: &str) {
         }
         "C016" => {
             let declared: Vec<String> = serde_json::from_value(input["declared"].clone()).unwrap();
-            let allowed = protocol::authorize_tool(
-                input["allowed_request"].as_str().unwrap(),
-                &declared,
-            );
-            let denied = protocol::authorize_tool(
-                input["denied_request"].as_str().unwrap(),
-                &declared,
-            );
+            let allowed =
+                protocol::authorize_tool(input["allowed_request"].as_str().unwrap(), &declared);
+            let denied =
+                protocol::authorize_tool(input["denied_request"].as_str().unwrap(), &declared);
             assert_eq!(allowed["allowed"], expected["allowed"]);
             assert_eq!(denied["allowed"], expected["denied"]);
             assert_eq!(denied["code"], expected["code"]);

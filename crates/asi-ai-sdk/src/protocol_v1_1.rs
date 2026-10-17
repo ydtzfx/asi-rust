@@ -51,7 +51,9 @@ pub fn authorize_workspace_path(workspace: &str, requested_path: &str) -> Value 
             relative.push(part);
         }
     }
-    let root = normalized_absolute(workspace).trim_end_matches('/').to_string();
+    let root = normalized_absolute(workspace)
+        .trim_end_matches('/')
+        .to_string();
     json!({
         "allowed": true,
         "code": Value::Null,
@@ -59,7 +61,11 @@ pub fn authorize_workspace_path(workspace: &str, requested_path: &str) -> Value 
     })
 }
 
-pub fn authorize_resolved_path(workspace: &str, requested_path: &str, resolved_path: &str) -> Value {
+pub fn authorize_resolved_path(
+    workspace: &str,
+    requested_path: &str,
+    resolved_path: &str,
+) -> Value {
     let lexical = authorize_workspace_path(workspace, requested_path);
     if lexical["allowed"] == Value::Bool(false) {
         return lexical;
@@ -86,7 +92,9 @@ pub fn authorize_non_sensitive_path(workspace: &str, requested_path: &str) -> Va
             || lower == ".env"
             || lower.starts_with(".env.")
             || PRIVATE_KEY_NAMES.contains(&lower.as_str())
-            || PRIVATE_KEY_SUFFIXES.iter().any(|suffix| lower.ends_with(suffix));
+            || PRIVATE_KEY_SUFFIXES
+                .iter()
+                .any(|suffix| lower.ends_with(suffix));
         if sensitive {
             return json!({"allowed": false, "code": "SENSITIVE_PATH", "segment": segment});
         }
@@ -117,13 +125,18 @@ pub fn apply_approval_gate(run_state: &Value, approval: &Value, now: &str) -> Va
     }
     let mut result = run_state.clone();
     let object = result.as_object_mut().expect("run state must be an object");
-    let sequence = run_state["sequence"].as_u64().expect("sequence must be u64");
+    let sequence = run_state["sequence"]
+        .as_u64()
+        .expect("sequence must be u64");
     object.insert("state".into(), json!("waiting_approval"));
     object.insert("sequence".into(), json!(sequence + 1));
     object.insert("reason_code".into(), json!("APPROVAL_REQUIRED"));
     object.insert(
         "reason".into(),
-        json!(format!("Approval required for {}", approval["category"].as_str().unwrap_or("unknown"))),
+        json!(format!(
+            "Approval required for {}",
+            approval["category"].as_str().unwrap_or("unknown")
+        )),
     );
     object.insert("updated_at".into(), json!(now));
     result
@@ -141,17 +154,25 @@ pub fn resume_approved_run(run_state: &Value, approval: &Value) -> Result<Value,
     }
     let mut result = run_state.clone();
     let object = result.as_object_mut().expect("run state must be an object");
-    let sequence = run_state["sequence"].as_u64().expect("sequence must be u64");
+    let sequence = run_state["sequence"]
+        .as_u64()
+        .expect("sequence must be u64");
     object.insert("state".into(), json!("running"));
     object.insert("sequence".into(), json!(sequence + 1));
     object.insert("reason_code".into(), json!("APPROVAL_GRANTED"));
     object.insert(
         "reason".into(),
-        json!(format!("Approval {} granted", approval["approval_id"].as_str().unwrap_or("unknown"))),
+        json!(format!(
+            "Approval {} granted",
+            approval["approval_id"].as_str().unwrap_or("unknown")
+        )),
     );
     object.insert(
         "updated_at".into(),
-        approval.get("decided_at").cloned().unwrap_or_else(|| run_state["updated_at"].clone()),
+        approval
+            .get("decided_at")
+            .cloned()
+            .unwrap_or_else(|| run_state["updated_at"].clone()),
     );
     Ok(result)
 }
@@ -159,11 +180,16 @@ pub fn resume_approved_run(run_state: &Value, approval: &Value) -> Result<Value,
 pub fn apply_tool_timeout(run_state: &Value, tool_call_id: &str, now: &str) -> Value {
     let mut result = run_state.clone();
     let object = result.as_object_mut().expect("run state must be an object");
-    let sequence = run_state["sequence"].as_u64().expect("sequence must be u64");
+    let sequence = run_state["sequence"]
+        .as_u64()
+        .expect("sequence must be u64");
     object.insert("state".into(), json!("failed"));
     object.insert("sequence".into(), json!(sequence + 1));
     object.insert("reason_code".into(), json!("TOOL_TIMEOUT"));
-    object.insert("reason".into(), json!(format!("Tool call {tool_call_id} timed out")));
+    object.insert(
+        "reason".into(),
+        json!(format!("Tool call {tool_call_id} timed out")),
+    );
     object.insert("updated_at".into(), json!(now));
     result
 }
@@ -205,7 +231,10 @@ pub fn canonical_digest(value: &Value) -> String {
 }
 
 pub fn build_redacted_audit_event(input: &Value) -> Value {
-    let sensitive = input["sensitive_arguments"].as_array().cloned().unwrap_or_default();
+    let sensitive = input["sensitive_arguments"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
     json!({
         "protocol_version": PROTOCOL_VERSION,
         "event_id": input["event_id"].clone(),
@@ -309,9 +338,9 @@ pub fn enter_recovery(operation: &Value, now: &str) -> Result<Value, String> {
     object.insert("status".into(), json!("recovering"));
     object.insert("attempt".into(), json!(attempt + 1));
     object.insert("updated_at".into(), json!(now));
-    object.entry("error".into()).or_insert_with(|| {
-        json!({"code": "REMOTE_RESULT_UNKNOWN", "retryable": true})
-    });
+    object
+        .entry("error")
+        .or_insert_with(|| json!({"code": "REMOTE_RESULT_UNKNOWN", "retryable": true}));
     Ok(result)
 }
 
