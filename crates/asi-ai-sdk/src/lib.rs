@@ -11,6 +11,7 @@
 //! types.rs        — Chat API types (Message, ChatRequest, StreamChunk)
 //! token.rs        — Token counting utilities
 //! protocol_v1_1.rs — isolated Agent Protocol v1.1 behavioral adapter
+//! runtime_handshake_v1.rs — Runtime Handshake v1 hello builder
 //! ```
 //!
 //! ## Stability
@@ -21,5 +22,6 @@
 pub mod agent;
 pub mod protocol_v1_1;
 pub mod provider;
+pub mod runtime_handshake_v1;
 pub mod token;
 pub mod types;
